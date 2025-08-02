@@ -1,0 +1,2427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI at Risk - Tournament Mode</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 95%;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Compact mode for game phase */
+        body.game-mode {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        body.game-mode .container {
+            max-width: 100%;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        body.game-mode .header {
+            display: none;
+        }
+
+        body.game-mode .tournament-status {
+            margin: 0;
+            border-radius: 0;
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            flex-shrink: 0;
+        }
+
+        body.game-mode .phase-indicator {
+            margin-bottom: 5px;
+        }
+
+        body.game-mode .phase-step {
+            margin: 0 10px;
+        }
+
+        body.game-mode .phase-step span {
+            font-size: 0.8rem;
+        }
+
+        body.game-mode .phase-circle {
+            width: 30px;
+            height: 30px;
+            font-size: 0.8rem;
+            margin-bottom: 5px;
+        }
+
+        body.game-mode .phase-step::after {
+            top: 15px;
+            width: 20px;
+        }
+
+        body.game-mode .timer {
+            font-size: 1.2rem;
+            margin: 5px 0;
+        }
+
+        body.game-mode #phase-description {
+            font-size: 0.9rem;
+            margin: 0;
+        }
+
+        body.game-mode .content-area {
+            flex: 1;
+            margin: 0;
+            border-radius: 0;
+            padding: 0;
+            box-shadow: none;
+            background: transparent;
+            overflow: hidden;
+        }
+
+        body.game-mode .game-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            border-radius: 0;
+            box-shadow: none;
+        }
+
+        body.game-mode .game-view {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        body.game-mode .game-view h2,
+        body.game-mode .game-view p {
+            display: none;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .tournament-status {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .phase-indicator {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .phase-step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0 30px;
+        }
+
+        .phase-circle {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            border: 3px solid transparent;
+        }
+
+        .phase-circle.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-color: rgba(102, 126, 234, 0.3);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            animation: pulse 2s infinite;
+        }
+
+        .phase-circle.completed {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            border-color: rgba(40, 167, 69, 0.3);
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+        }
+
+        .phase-step span {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #666;
+            text-align: center;
+            transition: color 0.3s ease;
+        }
+
+        .phase-step.active span {
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .phase-step.completed span {
+            color: #28a745;
+            font-weight: 600;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .timer {
+            text-align: center;
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+            margin: 20px 0;
+        }
+
+        .content-area {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .submit-form {
+            display: grid;
+            gap: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #555;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .submit-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .characters-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .character-card {
+            background: #f8f9fa;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .character-card:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+        }
+
+        .character-card.selected {
+            border-color: #667eea;
+            background: #e3f2fd;
+        }
+
+        .character-card.voted {
+            border-color: #28a745;
+            background: #d4edda;
+        }
+
+        .character-name {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .character-model {
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .character-personality {
+            color: #555;
+            font-style: italic;
+            margin-bottom: 10px;
+        }
+
+        .vote-count {
+            background: #667eea;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.9rem;
+            display: inline-block;
+        }
+
+        .game-view {
+            text-align: center;
+        }
+
+        .game-iframe {
+            width: 100%;
+            height: 80vh;
+            min-height: 700px;
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .end-screen {
+            text-align: center;
+        }
+
+        .winner-announcement {
+            font-size: 2rem;
+            color: #28a745;
+            margin-bottom: 20px;
+        }
+
+        .winner-method {
+            background: #e8f5e8;
+            border: 1px solid #c3e6cb;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+            text-align: center;
+            font-size: 1.1rem;
+        }
+
+        .final-scores-section {
+            margin-top: 30px;
+        }
+
+        .final-scores-section h4 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+
+        .final-scores-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .final-scores-table th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 8px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        .final-scores-table td {
+            padding: 10px 8px;
+            text-align: center;
+            border-bottom: 1px solid #eee;
+        }
+
+        .final-scores-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .final-scores-table tr.winner-row {
+            background: linear-gradient(90deg, #fff3cd 0%, #ffffff 100%);
+            font-weight: bold;
+        }
+
+        .final-scores-table tr.winner-row td {
+            color: #856404;
+        }
+
+        .stats-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .stats-table th,
+        .stats-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .stats-table th {
+            background: #f8f9fa;
+            font-weight: bold;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border: 1px solid #f5c6cb;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border: 1px solid #c3e6cb;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Mobile Styles */
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+                max-width: 100%;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .header p {
+                font-size: 1rem;
+            }
+
+            /* Fix phase indicators for mobile */
+            .phase-indicator {
+                flex-direction: column;
+                gap: 15px;
+                align-items: center;
+            }
+
+            .phase-step {
+                margin: 0;
+                flex-direction: row;
+                gap: 10px;
+                width: 100%;
+                max-width: 200px;
+                justify-content: flex-start;
+            }
+
+            .phase-step:not(:last-child) {
+                margin-right: 0;
+            }
+
+            .phase-step::before {
+                display: none; /* Remove connecting lines on mobile */
+            }
+
+            .phase-circle {
+                width: 35px;
+                height: 35px;
+                font-size: 0.9rem;
+                margin-bottom: 0;
+                flex-shrink: 0;
+                border-width: 2px;
+            }
+
+            .phase-step span {
+                font-size: 0.9rem;
+                text-align: left;
+            }
+
+            /* Tournament status adjustments */
+            .tournament-status {
+                padding: 20px 15px;
+                margin-bottom: 20px;
+            }
+
+            .timer {
+                font-size: 1.5rem;
+                margin: 15px 0;
+            }
+
+            /* Content area mobile fixes */
+            .content-area {
+                padding: 20px 15px;
+                margin: 0;
+            }
+
+            /* Form improvements for mobile */
+            .submit-form {
+                gap: 15px;
+                max-width: 100%;
+            }
+
+            .form-group input,
+            .form-group select,
+            .form-group textarea {
+                padding: 10px;
+                font-size: 16px; /* Prevents zoom on iOS */
+            }
+
+            .form-group textarea {
+                min-height: 80px;
+            }
+
+            .submit-btn {
+                padding: 12px 20px;
+                font-size: 1rem;
+                width: 100%;
+            }
+
+            /* Characters grid mobile */
+            .characters-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .character-card {
+                padding: 15px;
+            }
+
+            /* Game view mobile fixes */
+            .game-iframe {
+                height: 60vh;
+                min-height: 400px;
+            }
+
+            /* Game mode mobile adjustments */
+            body.game-mode .tournament-status {
+                padding: 8px 15px;
+            }
+
+            body.game-mode .phase-indicator {
+                flex-direction: row;
+                gap: 5px;
+                justify-content: center;
+            }
+
+            body.game-mode .phase-step {
+                flex-direction: column;
+                max-width: none;
+                width: auto;
+                margin: 0 5px;
+            }
+
+            body.game-mode .phase-circle {
+                width: 25px;
+                height: 25px;
+                font-size: 0.7rem;
+                margin-bottom: 3px;
+            }
+
+            body.game-mode .phase-step span {
+                font-size: 0.7rem;
+                text-align: center;
+            }
+
+            body.game-mode .timer {
+                font-size: 1rem;
+                margin: 5px 0;
+            }
+
+            body.game-mode #phase-description {
+                font-size: 0.8rem;
+            }
+
+            /* Stats table mobile */
+            .stats-table {
+                font-size: 0.9rem;
+            }
+
+            .stats-table th,
+            .stats-table td {
+                padding: 8px 4px;
+            }
+        }
+
+        /* Leaderboard Styles */
+        .game-results-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-left: 4px solid #28a745;
+        }
+
+        .game-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .leaderboard-section {
+            margin-bottom: 40px;
+        }
+
+        .leaderboard-section h3 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 1.5rem;
+        }
+
+        .leaderboard-subtitle {
+            color: #666;
+            margin-bottom: 20px;
+            font-style: italic;
+        }
+
+        .leaderboard-container {
+            background: white;
+            border-radius: 10px;
+            overflow-x: auto;
+            overflow-y: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+        }
+
+        .leaderboard-table {
+            width: 100%;
+            min-width: 800px; /* Ensure table doesn't get too cramped */
+            border-collapse: collapse;
+            margin: 0;
+        }
+
+        .leaderboard-table th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 12px;
+            text-align: left;
+            font-weight: bold;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .leaderboard-table td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+            vertical-align: middle;
+        }
+
+        .leaderboard-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .leaderboard-table tr.top-player {
+            background: linear-gradient(90deg, #fff3cd 0%, #ffffff 100%);
+        }
+
+        .leaderboard-table tr.top-model {
+            background: linear-gradient(90deg, #d1ecf1 0%, #ffffff 100%);
+        }
+
+        .rank-cell {
+            font-weight: bold;
+            font-size: 1.1rem;
+            text-align: center;
+            width: 60px;
+        }
+
+        .player-name, .model-name {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .win-rate {
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        .success-rate {
+            color: #17a2b8;
+            font-weight: bold;
+        }
+
+        .models-cell {
+            font-size: 0.85rem;
+            color: #666;
+            max-width: 150px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .show-more-container {
+            text-align: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-top: 1px solid #eee;
+        }
+
+        .show-more-btn {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background-color 0.3s;
+        }
+
+        .show-more-btn:hover {
+            background: #5a6268;
+        }
+
+        .restart-section {
+            text-align: center;
+            margin-top: 40px;
+            padding: 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            color: white;
+        }
+
+        .restart-message {
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+        }
+
+        .restart-btn {
+            background: white;
+            color: #667eea;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .restart-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        /* Enhanced mobile responsiveness for leaderboards */
+        @media (max-width: 768px) {
+            /* Leaderboard container improvements */
+            .leaderboard-container {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                border-radius: 8px;
+            }
+
+            .leaderboard-table {
+                min-width: 900px; /* Increased to accommodate all columns */
+            }
+
+            .leaderboard-table th,
+            .leaderboard-table td {
+                padding: 10px 8px;
+                font-size: 0.85rem;
+                white-space: nowrap;
+            }
+
+            .rank-cell {
+                width: 50px;
+                min-width: 50px;
+            }
+
+            /* Make player/model names more readable but still scrollable */
+            .player-name, .model-name {
+                min-width: 120px;
+                max-width: 150px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            /* Improve stat readability */
+            .win-rate, .success-rate {
+                font-size: 0.9rem;
+            }
+
+            /* Remove mobile-hide behavior to allow horizontal scrolling */
+            .mobile-hide {
+                display: table-cell !important;
+            }
+        }
+
+        /* Very small mobile devices */
+        @media (max-width: 480px) {
+            .container {
+                padding: 5px;
+            }
+
+            .header h1 {
+                font-size: 1.5rem;
+            }
+
+            .header p {
+                font-size: 0.9rem;
+            }
+
+            .tournament-status {
+                padding: 15px 10px;
+                margin-bottom: 15px;
+            }
+
+            .content-area {
+                padding: 15px 10px;
+            }
+
+            .timer {
+                font-size: 1.2rem;
+            }
+
+            .phase-circle {
+                width: 30px;
+                height: 30px;
+                font-size: 0.8rem;
+            }
+
+            .phase-step span {
+                font-size: 0.8rem;
+            }
+
+            /* Form ultra-mobile */
+            .form-group input,
+            .form-group select,
+            .form-group textarea {
+                padding: 8px;
+            }
+
+            .character-card {
+                padding: 12px;
+            }
+
+            .character-name {
+                font-size: 1.1rem;
+            }
+
+            /* Game iframe for very small screens */
+            .game-iframe {
+                height: 50vh;
+                min-height: 300px;
+            }
+
+            /* Game mode ultra-compact */
+            body.game-mode .tournament-status {
+                padding: 5px 10px;
+            }
+
+            body.game-mode .phase-circle {
+                width: 20px;
+                height: 20px;
+                font-size: 0.6rem;
+            }
+
+            body.game-mode .phase-step span {
+                font-size: 0.6rem;
+            }
+
+            body.game-mode .timer {
+                font-size: 0.9rem;
+            }
+
+            /* Stats table ultra-mobile */
+            .stats-table {
+                font-size: 0.8rem;
+            }
+
+            .stats-table th,
+            .stats-table td {
+                padding: 6px 2px;
+            }
+
+            /* Enhanced leaderboard mobile styles */
+            .game-stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+
+            .stat-card {
+                padding: 10px;
+            }
+
+            .stat-value {
+                font-size: 1.4rem;
+            }
+
+            .stat-label {
+                font-size: 0.8rem;
+            }
+
+            .leaderboard-section h3 {
+                font-size: 1.2rem;
+                margin-bottom: 15px;
+            }
+
+            .leaderboard-subtitle {
+                font-size: 0.9rem;
+                margin-bottom: 15px;
+            }
+
+            /* Enhanced leaderboard table mobile responsiveness */
+            .leaderboard-container {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                border-radius: 8px;
+            }
+
+            .leaderboard-table {
+                min-width: 1000px; /* Increased to show all columns */
+                font-size: 0.75rem;
+            }
+
+            .leaderboard-table th {
+                padding: 8px 6px;
+                font-size: 0.7rem;
+                letter-spacing: 0.3px;
+                white-space: nowrap;
+            }
+
+            .leaderboard-table td {
+                padding: 8px 6px;
+                font-size: 0.75rem;
+                white-space: nowrap;
+            }
+
+            .rank-cell {
+                width: 40px;
+                min-width: 40px;
+                font-size: 0.8rem;
+                padding: 8px 4px;
+            }
+
+            /* Compact player/model names for mobile */
+            .player-name, .model-name {
+                font-size: 0.75rem;
+                min-width: 100px;
+                max-width: 120px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
+            /* Ensure important stats remain visible */
+            .win-rate, .success-rate {
+                font-size: 0.75rem;
+                font-weight: bold;
+            }
+
+            /* Keep all columns visible for horizontal scrolling */
+            .mobile-hide {
+                display: table-cell !important;
+            }
+
+            /* Improve final scores table mobile display */
+            .final-scores-table {
+                font-size: 0.75rem;
+                min-width: 400px;
+            }
+
+            .final-scores-table th,
+            .final-scores-table td {
+                padding: 6px 3px;
+                font-size: 0.7rem;
+            }
+
+            /* Show more button mobile styling */
+            .show-more-container {
+                padding: 10px;
+            }
+
+            .show-more-btn {
+                padding: 6px 12px;
+                font-size: 0.8rem;
+                width: 100%;
+            }
+
+            .restart-section {
+                padding: 20px 15px;
+            }
+
+            .restart-message {
+                font-size: 1rem;
+            }
+
+            .restart-btn {
+                padding: 10px 20px;
+                font-size: 1rem;
+            }
+        }
+
+        /* Ultra-small screens (320px and below) */
+        @media (max-width: 320px) {
+            .leaderboard-table {
+                min-width: 900px; /* Maintain full table width for scrolling */
+                font-size: 0.7rem;
+            }
+
+            .leaderboard-table th,
+            .leaderboard-table td {
+                padding: 6px 4px;
+                font-size: 0.7rem;
+                white-space: nowrap;
+            }
+
+            .rank-cell {
+                width: 35px;
+                min-width: 35px;
+                font-size: 0.7rem;
+            }
+
+            .player-name, .model-name {
+                min-width: 90px;
+                max-width: 100px;
+                font-size: 0.7rem;
+            }
+
+            .game-stats-grid {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+
+            .stat-card {
+                padding: 8px;
+            }
+
+            .stat-value {
+                font-size: 1.2rem;
+            }
+
+            .stat-label {
+                font-size: 0.75rem;
+            }
+
+            /* Keep all columns visible for horizontal scrolling */
+            .mobile-hide {
+                display: table-cell !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 AIs at Risk 🤖</h1>
+            <p style="font-size: 0.9rem; opacity: 0.8; margin-top: 10px;">
+                A project by <a href="https://andreasthinks.me/posts/ai-at-play/" target="_blank" style="color: #fff; text-decoration: underline;">AndreasThinks</a> (and some ✨vibes✨)
+            </p>
+        </div>
+
+        <div class="tournament-status">
+            <div class="phase-indicator">
+                <div class="phase-step">
+                    <div class="phase-circle" id="submit-circle">1</div>
+                    <span>Submit Characters</span>
+                </div>
+                <div class="phase-step">
+                    <div class="phase-circle" id="voting-circle">2</div>
+                    <span>Vote</span>
+                </div>
+                <div class="phase-step">
+                    <div class="phase-circle" id="starting-game-circle">3</div>
+                    <span>Starting Game</span>
+                </div>
+                <div class="phase-step">
+                    <div class="phase-circle" id="game-circle">4</div>
+                    <span>Battle</span>
+                </div>
+                <div class="phase-step">
+                    <div class="phase-circle" id="pause-circle">⚠</div>
+                    <span>Service Pause</span>
+                </div>
+                <div class="phase-step">
+                    <div class="phase-circle" id="end-circle">5</div>
+                    <span>Results</span>
+                </div>
+            </div>
+            
+            <div class="timer" id="timer">Loading...</div>
+            <div id="phase-description" style="text-align: center;">Loading tournament status...</div>
+            <div id="tournament-info" style="text-align: center; margin-top: 10px; font-size: 0.9rem; color: #666;"></div>
+        </div>
+
+        <div class="content-area" id="content-area">
+            <div class="loading">
+                <div class="spinner"></div>
+                <p>Loading tournament...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let tournamentStatus = null;
+        let selectedCharacter = null;
+        let hasVoted = false;
+        let currentPhase = null; // Track current phase to avoid unnecessary rebuilds
+        let clientTimer = null; // Client-side timer
+        let phaseEndTime = null; // Absolute end time for current phase
+        let lastServerSync = 0; // Last time we synced with server
+        let gameCreationAttempts = 0; // Track game creation attempts
+        let gameCreationInProgress = false; // Prevent duplicate creation attempts
+        let gameMissingPollInterval = null; // Polling interval for missing games
+        let startingGamePollInterval = null; // Aggressive polling during starting game phase
+
+        // Check if user has voted (using localStorage)
+        function checkVotingStatus() {
+            const tournamentId = tournamentStatus?.tournament_id;
+            if (tournamentId) {
+                hasVoted = localStorage.getItem(`voted_${tournamentId}`) === 'true';
+            }
+        }
+
+        // Mark user as voted
+        function markAsVoted() {
+            const tournamentId = tournamentStatus?.tournament_id;
+            if (tournamentId) {
+                localStorage.setItem(`voted_${tournamentId}`, 'true');
+                hasVoted = true;
+            }
+        }
+
+        // Start client-side timer
+        function startClientTimer() {
+            if (clientTimer) {
+                clearInterval(clientTimer);
+            }
+            
+            clientTimer = setInterval(() => {
+                updateClientTimer();
+            }, 1000); // Update every second
+        }
+
+        // Update client-side timer
+        function updateClientTimer() {
+            const timerElement = document.getElementById('timer');
+            
+            if (!phaseEndTime) {
+                // No timer running - hide timer or show waiting message
+                if (tournamentStatus && tournamentStatus.phase === 'end_screen' && !tournamentStatus.auto_restart) {
+                    timerElement.textContent = 'Waiting for restart...';
+                } else {
+                    timerElement.textContent = 'Loading...';
+                }
+                return;
+            }
+            
+            const now = new Date();
+            const timeRemaining = Math.max(0, Math.floor((phaseEndTime - now) / 1000));
+            
+            // Update timer display
+            const minutes = Math.floor(timeRemaining / 60);
+            const seconds = timeRemaining % 60;
+            
+            timerElement.textContent = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            
+            // Check if phase should have ended
+            if (timeRemaining <= 0) {
+                // Phase ended, sync with server to check for phase change
+                fetchTournamentStatus();
+            }
+        }
+
+        // Fetch tournament status
+        async function fetchTournamentStatus() {
+            try {
+                const response = await fetch('/api/tournament/status');
+                const data = await response.json();
+                
+                if (!data.tournament_mode) {
+                    showError('Tournament mode is not enabled on this server.');
+                    return;
+                }
+
+                const previousPhase = tournamentStatus?.phase;
+                tournamentStatus = data;
+                lastServerSync = Date.now();
+                
+                // Update phase end time for client timer
+                if (data.phase_end_time) {
+                    phaseEndTime = new Date(data.phase_end_time);
+                } else {
+                    phaseEndTime = null;
+                }
+                
+                checkVotingStatus();
+                updateUI();
+                
+                // Start/restart client timer if we have an end time
+                if (phaseEndTime) {
+                    startClientTimer();
+                }
+                
+                // If phase changed, we might need to refresh content
+                if (previousPhase && previousPhase !== data.phase) {
+                    console.log(`Phase changed from ${previousPhase} to ${data.phase}`);
+                    
+                    // Start aggressive polling when entering starting_game phase
+                    if (data.phase === 'starting_game') {
+                        console.log('Entered starting_game phase - starting aggressive polling');
+                        startStartingGamePolling();
+                    }
+                    
+                    // Stop aggressive polling when successfully transitioning to game phase
+                    if (data.phase === 'game' && data.game_id) {
+                        console.log('Successfully transitioned to game phase - stopping aggressive polling');
+                        stopStartingGamePolling();
+                    }
+                    
+                    // Auto-create game when transitioning to game phase
+                    if (data.phase === 'game' && !data.game_id) {
+                        console.log('Phase changed to game but no game_id found. Starting immediate game creation...');
+                        startGameCreationProcess();
+                    }
+                }
+                
+                // Continue aggressive polling during starting_game phase until successful
+                if (data.phase === 'starting_game' && !startingGamePollInterval) {
+                    console.log('In starting_game phase without polling - starting aggressive polling');
+                    startStartingGamePolling();
+                }
+                
+                // Stop aggressive polling if we successfully have a game
+                if (data.phase === 'game' && data.game_id && startingGamePollInterval) {
+                    console.log('Game successfully loaded - stopping aggressive polling');
+                    stopStartingGamePolling();
+                }
+                
+            } catch (error) {
+                console.error('Error fetching tournament status:', error);
+                showError('Failed to load tournament status. Please refresh the page.');
+            }
+        }
+
+        // Update UI based on tournament status
+        function updateUI() {
+            if (!tournamentStatus) return;
+
+            updatePhaseIndicator();
+            updateContent();
+        }
+
+        // Update phase indicator
+        function updatePhaseIndicator() {
+            const circles = {
+                'submit': document.getElementById('submit-circle'),
+                'voting': document.getElementById('voting-circle'),
+                'starting_game': document.getElementById('starting-game-circle'),
+                'game': document.getElementById('game-circle'),
+                'token_exhausted': document.getElementById('pause-circle'),
+                'end_screen': document.getElementById('end-circle')
+            };
+
+            const steps = {
+                'submit': document.getElementById('submit-circle').parentElement,
+                'voting': document.getElementById('voting-circle').parentElement,
+                'starting_game': document.getElementById('starting-game-circle').parentElement,
+                'game': document.getElementById('game-circle').parentElement,
+                'token_exhausted': document.getElementById('pause-circle').parentElement,
+                'end_screen': document.getElementById('end-circle').parentElement
+            };
+
+            // Reset all circles and steps
+            Object.values(circles).forEach(circle => {
+                circle.className = 'phase-circle';
+            });
+            Object.values(steps).forEach(step => {
+                step.className = 'phase-step';
+            });
+
+            const currentPhase = tournamentStatus.phase;
+            const phases = ['submit', 'voting', 'starting_game', 'game', 'end_screen'];
+            const currentIndex = phases.indexOf(currentPhase);
+
+            // Mark completed phases
+            for (let i = 0; i < currentIndex; i++) {
+                circles[phases[i]].classList.add('completed');
+                steps[phases[i]].classList.add('completed');
+            }
+
+            // Mark current phase
+            if (circles[currentPhase]) {
+                circles[currentPhase].classList.add('active');
+                steps[currentPhase].classList.add('active');
+            }
+        }
+
+        // Update content area based on phase
+        function updateContent() {
+            const contentArea = document.getElementById('content-area');
+            const phase = tournamentStatus.phase;
+
+            // Apply or remove game-mode class based on phase
+            if (phase === 'game') {
+                document.body.classList.add('game-mode');
+            } else {
+                document.body.classList.remove('game-mode');
+            }
+
+            // Only rebuild content if phase has actually changed
+            if (currentPhase !== phase) {
+                currentPhase = phase;
+                
+                switch (phase) {
+                    case 'submit':
+                        showSubmitPhase(contentArea);
+                        break;
+                    case 'voting':
+                        showVotingPhase(contentArea);
+                        break;
+                    case 'starting_game':
+                        showStartingGamePhase(contentArea);
+                        break;
+                    case 'game':
+                        showGamePhase(contentArea);
+                        break;
+                    case 'token_exhausted':
+                        showTokenExhaustedPhase(contentArea);
+                        break;
+                    case 'end_screen':
+                        showEndPhase(contentArea);
+                        break;
+                    default:
+                        contentArea.innerHTML = '<p>Unknown tournament phase.</p>';
+                }
+            } else if (phase === 'voting') {
+                // For voting phase, update vote counts without rebuilding the entire interface
+                updateVoteCounts();
+            }
+
+            // Always update phase description with optional dashboard link
+            const descriptions = {
+                'submit': 'Submit your AI character for the tournament, or just wait to get started!',
+                'voting': 'Vote for your favorite characters to compete!',
+                'starting_game': 'Setting up the battle arena and loading all players...',
+                'game': 'Watch the selected characters battle for supremacy!',
+                'end_screen': 'Tournament complete! See the results below.'
+            };
+
+            const phaseDescriptionElement = document.getElementById('phase-description');
+            
+            // Create the base phase description
+            let phaseContent = descriptions[phase] || 'Tournament in progress...';
+            
+            // Add buttons container for all phases
+            const buttonsHtml = `
+                <div style="margin-top: 10px; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px;">
+                    <a href="/tournament_leaderboard.html" target="_blank" style="
+                        display: inline-block;
+                        background: rgba(40, 167, 69, 0.1);
+                        color: #28a745;
+                        text-decoration: none;
+                        padding: 4px 12px;
+                        border-radius: 15px;
+                        font-size: 0.85rem;
+                        transition: all 0.3s;
+                        border: 1px solid rgba(40, 167, 69, 0.3);
+                        font-weight: 500;
+                    " onmouseover="this.style.background='rgba(40, 167, 69, 0.15)'; this.style.transform='translateY(-1px)'" 
+                       onmouseout="this.style.background='rgba(40, 167, 69, 0.1)'; this.style.transform='translateY(0)'">
+                        🏆 Leaderboard
+                    </a>
+                    <a href="/character_library.html" target="_blank" style="
+                        display: inline-block;
+                        background: rgba(23, 162, 184, 0.1);
+                        color: #17a2b8;
+                        text-decoration: none;
+                        padding: 4px 12px;
+                        border-radius: 15px;
+                        font-size: 0.85rem;
+                        transition: all 0.3s;
+                        border: 1px solid rgba(23, 162, 184, 0.3);
+                        font-weight: 500;
+                    " onmouseover="this.style.background='rgba(23, 162, 184, 0.15)'; this.style.transform='translateY(-1px)'" 
+                       onmouseout="this.style.background='rgba(23, 162, 184, 0.1)'; this.style.transform='translateY(0)'">
+                        📚 Character Library
+                    </a>
+                    <a href="/about_this.html" target="_blank" style="
+                        display: inline-block;
+                        background: rgba(147, 51, 234, 0.1);
+                        color: #9333ea;
+                        text-decoration: none;
+                        padding: 4px 12px;
+                        border-radius: 15px;
+                        font-size: 0.85rem;
+                        transition: all 0.3s;
+                        border: 1px solid rgba(147, 51, 234, 0.3);
+                        font-weight: 500;
+                    " onmouseover="this.style.background='rgba(147, 51, 234, 0.15)'; this.style.transform='translateY(-1px)'" 
+                       onmouseout="this.style.background='rgba(147, 51, 234, 0.1)'; this.style.transform='translateY(0)'">
+                        🔮 About This
+                    </a>
+                    <a href="/support_me.html" target="_blank" style="
+                        display: inline-block;
+                        background: rgba(239, 68, 68, 0.1);
+                        color: #ef4444;
+                        text-decoration: none;
+                        padding: 4px 12px;
+                        border-radius: 15px;
+                        font-size: 0.85rem;
+                        transition: all 0.3s;
+                        border: 1px solid rgba(239, 68, 68, 0.3);
+                        font-weight: 500;
+                    " onmouseover="this.style.background='rgba(239, 68, 68, 0.15)'; this.style.transform='translateY(-1px)'" 
+                       onmouseout="this.style.background='rgba(239, 68, 68, 0.1)'; this.style.transform='translateY(0)'">
+                        ❤️ Support Me
+                    </a>
+                </div>
+            `;
+            
+            phaseDescriptionElement.innerHTML = phaseContent + buttonsHtml;
+        }
+
+        // Update vote counts without rebuilding the voting interface
+        async function updateVoteCounts() {
+            try {
+                const votesResponse = await fetch('/api/tournament/votes');
+                const votesData = await votesResponse.json();
+                const votes = votesData.results || [];
+
+                // Create vote counts map
+                const voteCounts = {};
+                votes.forEach(vote => {
+                    voteCounts[vote.character_id] = vote.vote_count;
+                });
+
+                // Update existing vote count displays
+                document.querySelectorAll('.character-card').forEach(card => {
+                    const characterId = card.getAttribute('data-character-id');
+                    const voteCountElement = card.querySelector('.vote-count');
+                    if (voteCountElement && characterId) {
+                        voteCountElement.textContent = `${voteCounts[characterId] || 0} votes`;
+                    }
+                });
+            } catch (error) {
+                console.error('Error updating vote counts:', error);
+            }
+        }
+
+        // Show submit phase
+        async function showSubmitPhase(container) {
+            container.innerHTML = `
+                <div style="text-align: center; padding: 40px;">
+                    <div style="font-size: 4rem; margin-bottom: 20px;">📚</div>
+                    <h2 style="color: #333; margin-bottom: 20px;">Character Submission Phase</h2>
+                    <p style="color: #666; font-size: 1.2rem; margin-bottom: 30px; max-width: 600px; margin-left: auto; margin-right: auto; line-height: 1.6;">
+                        The character submission phase is now open! To submit your AI character or browse existing characters, 
+                        please visit the dedicated Character Library.
+                    </p>
+                    
+                    <div style="background: #e3f2fd; border: 2px solid #2196f3; border-radius: 15px; padding: 30px; margin: 30px auto; max-width: 500px;">
+                        <h3 style="color: #1565c0; margin-bottom: 15px;">📚 Visit the Character Library</h3>
+                        <p style="color: #1976d2; margin-bottom: 20px;">
+                            Search existing characters, browse the full collection, and submit new characters all in one place!
+                        </p>
+                        <a href="/character_library.html" target="_blank" style="
+                            display: inline-block;
+                            background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+                            color: white;
+                            text-decoration: none;
+                            padding: 15px 30px;
+                            border-radius: 25px;
+                            font-size: 1.1rem;
+                            font-weight: bold;
+                            transition: all 0.3s;
+                            box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);
+                        " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(33, 150, 243, 0.4)'" 
+                           onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(33, 150, 243, 0.3)'">
+                            🚀 Open Character Library
+                        </a>
+                    </div>
+
+                    <div style="background: #f8f9fa; border-radius: 10px; padding: 25px; margin: 30px auto; max-width: 600px; text-align: left;">
+                        <h4 style="color: #333; margin-bottom: 15px; text-align: center;">✨ What you can do in the Character Library:</h4>
+                        <ul style="color: #666; line-height: 1.8; margin-left: 20px;">
+                            <li><strong>🔍 Search Characters:</strong> Find existing characters by name or personality traits</li>
+                            <li><strong>📖 Browse All:</strong> Explore the complete collection with sorting and pagination</li>
+                            <li><strong>➕ Submit New:</strong> Create and submit your unique AI character</li>
+                            <li><strong>📊 View Stats:</strong> See character performance and game statistics</li>
+                        </ul>
+                    </div>
+
+                    <div style="margin-top: 40px; padding: 20px; background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 10px; max-width: 500px; margin-left: auto; margin-right: auto;">
+                        <p style="color: #856404; margin: 0; font-size: 0.9rem;">
+                            <strong>💡 Pro Tip:</strong> The Character Library will open in a new tab so you can keep track of the tournament timer here!
+                        </p>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Show starting game phase
+        function showStartingGamePhase(container) {
+            container.innerHTML = `
+                <div style="text-align: center; padding: 40px;">
+                    <div style="font-size: 4rem; margin-bottom: 20px;">🎮</div>
+                    <h2 style="color: #333; margin-bottom: 20px;">Starting Tournament Game</h2>
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p style="font-size: 1.2rem; margin: 20px 0;">Creating game and loading players...</p>
+                    </div>
+                    
+                    <div style="background: #e3f2fd; border: 2px solid #2196f3; border-radius: 15px; padding: 25px; margin: 30px auto; max-width: 600px;">
+                        <h3 style="color: #1565c0; margin-bottom: 15px;">🚀 Game Creation Process</h3>
+                        <ul style="color: #1976d2; text-align: left; margin-bottom: 20px; line-height: 1.8;">
+                            <li>✅ Characters selected from voting results</li>
+                            <li>⏳ Terminating any existing games</li>
+                            <li>⏳ Creating new tournament game</li>
+                            <li>⏳ Loading all 4 AI players</li>
+                            <li>⏳ Validating game setup</li>
+                            <li>⌛ Preparing battle arena...</li>
+                        </ul>
+                    </div>
+
+                    <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 10px; padding: 20px; margin: 30px auto; max-width: 500px;">
+                        <p style="color: #856404; margin: 0; font-size: 0.9rem;">
+                            <strong>⚡ Enhanced Reliability:</strong> Our new system ensures all 4 players are properly loaded before the game begins. 
+                            If any issues occur, the system will automatically retry to guarantee a smooth tournament experience!
+                        </p>
+                    </div>
+
+                    <div style="margin-top: 30px; color: #666; font-size: 0.9rem;">
+                        <p>This usually takes 30-60 seconds. The game will start automatically once ready!</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Show voting phase
+        async function showVotingPhase(container) {
+            try {
+                const [charactersResponse, votesResponse] = await Promise.all([
+                    fetch('/api/tournament/characters'),
+                    fetch('/api/tournament/votes')
+                ]);
+
+                const charactersData = await charactersResponse.json();
+                const votesData = await votesResponse.json();
+
+                const allCharacters = charactersData.characters || [];
+                const votes = votesData.results || [];
+
+                // Limit to random 10 if more than 10 characters
+                let characters = allCharacters;
+                if (allCharacters.length > 10) {
+                    characters = shuffleArray([...allCharacters]).slice(0, 10);
+                }
+
+                // Create vote counts map
+                const voteCounts = {};
+                votes.forEach(vote => {
+                    voteCounts[vote.character_id] = vote.vote_count;
+                });
+
+                container.innerHTML = `
+                    <h2>Vote for Characters</h2>
+                    ${hasVoted ? '<p class="success-message">✅ You have already voted in this tournament!</p>' : '<p>Select a character to vote for:</p>'}
+                    ${allCharacters.length > 10 ? `<p style="color: #666; font-style: italic; margin-bottom: 15px;">📝 Showing 10 randomly selected characters from ${allCharacters.length} total submissions</p>` : ''}
+                    <div class="characters-grid" id="characters-grid">
+                        ${characters.map(character => `
+                            <div class="character-card ${hasVoted ? 'voted' : ''}" 
+                                 data-character-id="${character.id}"
+                                 onclick="${hasVoted ? '' : 'selectCharacter(' + character.id + ')'}">
+                                <div class="character-name">${escapeHtml(character.name)}</div>
+                                <div class="character-model">Model: Random Assignment 🎲</div>
+                                <div class="character-personality">${escapeHtml(character.personality)}</div>
+                                <div class="vote-count">${voteCounts[character.id] || 0} votes</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    ${!hasVoted ? `
+                        <div style="text-align: center; margin-top: 20px;">
+                            <button class="submit-btn" id="vote-btn" onclick="submitVote()" disabled>
+                                Vote for Selected Character
+                            </button>
+                        </div>
+                    ` : ''}
+                    <div id="vote-message"></div>
+                `;
+            } catch (error) {
+                console.error('Error loading voting phase:', error);
+                showError('Failed to load characters for voting.');
+            }
+        }
+
+        // Show token exhausted phase
+        function showTokenExhaustedPhase(container) {
+            container.innerHTML = `
+                <div style="text-align: center; padding: 40px;">
+                    <div style="font-size: 4rem; margin-bottom: 20px;">🚨</div>
+                    <h2 style="color: #dc3545; margin-bottom: 20px;">We're Very Sorry!</h2>
+                    
+                    <div style="background: #f8d7da; border: 2px solid #dc3545; border-radius: 15px; padding: 30px; margin: 30px auto; max-width: 600px;">
+                        <h3 style="color: #721c24; margin-bottom: 15px;">Service Temporarily Paused</h3>
+                        <p style="color: #721c24; font-size: 1.1rem; line-height: 1.6; margin-bottom: 20px;">
+                            Our AI service has temporarily run out of API tokens during this exciting match!
+                        </p>
+                        <p style="color: #721c24; font-size: 1rem; line-height: 1.6; margin-bottom: 0;">
+                            We're working to restore service as quickly as possible. The game state has been preserved and will resume once service is restored.
+                        </p>
+                    </div>
+
+                    <div style="background: #e3f2fd; border: 2px solid #2196f3; border-radius: 15px; padding: 25px; margin: 30px auto; max-width: 600px;">
+                        <h3 style="color: #1565c0; margin-bottom: 15px;">✨ While We Resolve This, You Can:</h3>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 20px;">
+                            <a href="/tournament_leaderboard.html" target="_blank" style="
+                                display: block;
+                                background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+                                color: white;
+                                text-decoration: none;
+                                padding: 20px 15px;
+                                border-radius: 12px;
+                                font-size: 1rem;
+                                font-weight: bold;
+                                transition: all 0.3s;
+                                box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+                                text-align: center;
+                            " onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 6px 20px rgba(40, 167, 69, 0.4)'" 
+                               onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(40, 167, 69, 0.3)'">
+                                🏆 View Current<br>Leaderboard
+                            </a>
+                            <a href="/character_library.html" target="_blank" style="
+                                display: block;
+                                background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+                                color: white;
+                                text-decoration: none;
+                                padding: 20px 15px;
+                                border-radius: 12px;
+                                font-size: 1rem;
+                                font-weight: bold;
+                                transition: all 0.3s;
+                                box-shadow: 0 4px 15px rgba(23, 162, 184, 0.3);
+                                text-align: center;
+                            " onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 6px 20px rgba(23, 162, 184, 0.4)'" 
+                               onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(23, 162, 184, 0.3)'">
+                                📚 Browse Character<br>Library
+                            </a>
+                            <a href="/about_this.html" target="_blank" style="
+                                display: block;
+                                background: linear-gradient(135deg, #9333ea 0%, #7c3aed 100%);
+                                color: white;
+                                text-decoration: none;
+                                padding: 20px 15px;
+                                border-radius: 12px;
+                                font-size: 1rem;
+                                font-weight: bold;
+                                transition: all 0.3s;
+                                box-shadow: 0 4px 15px rgba(147, 51, 234, 0.3);
+                                text-align: center;
+                            " onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 6px 20px rgba(147, 51, 234, 0.4)'" 
+                               onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(147, 51, 234, 0.3)'">
+                                🔮 Learn About<br>This Project
+                            </a>
+                            <a href="/support_me.html" target="_blank" style="
+                                display: block;
+                                background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+                                color: white;
+                                text-decoration: none;
+                                padding: 20px 15px;
+                                border-radius: 12px;
+                                font-size: 1rem;
+                                font-weight: bold;
+                                transition: all 0.3s;
+                                box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+                                text-align: center;
+                            " onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 6px 20px rgba(239, 68, 68, 0.4)'" 
+                               onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(239, 68, 68, 0.3)'">
+                                ❤️ Support Development<br>& Prevent Interruptions
+                            </a>
+                        </div>
+                    </div>
+
+                    <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 10px; padding: 20px; margin: 30px auto; max-width: 500px;">
+                        <p style="color: #856404; margin: 0; font-size: 0.9rem; line-height: 1.5;">
+                            <strong>💡 What Happened:</strong> Our AI provider returned an HTTP 402 error indicating insufficient API credits. 
+                            Service will resume automatically once credits are restored by our administrator.
+                        </p>
+                    </div>
+
+                    <div style="margin-top: 30px; color: #666; font-size: 0.9rem;">
+                        <p>This page will automatically update when the tournament resumes.</p>
+                        <p style="margin-top: 10px; font-size: 0.8rem; opacity: 0.8;">
+                            All game progress has been preserved. No data will be lost.
+                        </p>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Show game phase
+        function showGamePhase(container) {
+            container.innerHTML = `
+                <div class="game-view">
+                    <iframe class="game-iframe" src="/dashboard" title="Tournament Game"></iframe>
+                </div>
+            `;
+        }
+
+        // Show end phase
+        async function showEndPhase(container) {
+            // Show loading state
+            container.innerHTML = `
+                <div class="end-screen">
+                    <h2>Tournament Complete!</h2>
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>Loading results and leaderboards...</p>
+                    </div>
+                </div>
+            `;
+
+            try {
+                // Fetch all data in parallel
+                const [statsResponse, characterLeaderboardResponse, modelLeaderboardResponse] = await Promise.all([
+                    fetch('/api/tournament/stats'),
+                    fetch('/api/leaderboard/characters?limit=20'),
+                    fetch('/api/leaderboard/models?limit=10')
+                ]);
+
+                const statsData = await statsResponse.json();
+                const characterLeaderboardData = await characterLeaderboardResponse.json();
+                const modelLeaderboardData = await modelLeaderboardResponse.json();
+
+                const stats = statsData.stats || [];
+                const characterLeaderboard = characterLeaderboardData.characters || [];
+                const modelLeaderboard = modelLeaderboardData.models || [];
+
+                container.innerHTML = `
+                    <div class="end-screen">
+                        <h2>🎉 Tournament Complete!</h2>
+                        
+                        <!-- Current Game Results -->
+                        ${tournamentStatus.game_result ? `
+                            <div class="game-results-section">
+                                <div class="winner-announcement">
+                                    🏆 Winner: ${escapeHtml(tournamentStatus.game_result.winner_player_name || 'Unknown')}
+                                </div>
+                                
+                                ${tournamentStatus.game_result.winner_determination_method ? `
+                                    <div class="winner-method">
+                                        <strong>Victory Method:</strong> ${getWinnerMethodDisplay(tournamentStatus.game_result.winner_determination_method)}
+                                        ${tournamentStatus.game_result.winner_criteria ? `
+                                            <br><em>${escapeHtml(tournamentStatus.game_result.winner_criteria)}</em>
+                                        ` : ''}
+                                    </div>
+                                ` : ''}
+                                
+                                <div class="game-stats">
+                                    <h3>This Game's Results</h3>
+                                    <div class="game-stats-grid">
+                                        <div class="stat-card">
+                                            <div class="stat-value">${tournamentStatus.game_result.total_turns || 'N/A'}</div>
+                                            <div class="stat-label">Total Turns</div>
+                                        </div>
+                                        <div class="stat-card">
+                                            <div class="stat-value">${Math.round((tournamentStatus.game_result.total_duration_seconds || 0) / 60)}m</div>
+                                            <div class="stat-label">Game Duration</div>
+                                        </div>
+                                        <div class="stat-card">
+                                            <div class="stat-value">${tournamentStatus.game_result.total_actions || 'N/A'}</div>
+                                            <div class="stat-label">Total Actions</div>
+                                        </div>
+                                        <div class="stat-card">
+                                            <div class="stat-value">${tournamentStatus.game_result.battles_fought || 'N/A'}</div>
+                                            <div class="stat-label">Battles Fought</div>
+                                        </div>
+                                    </div>
+                                    
+                                    ${tournamentStatus.game_result.final_scores && tournamentStatus.game_result.final_scores.length > 0 ? `
+                                        <div class="final-scores-section">
+                                            <h4>Final Standings</h4>
+                                            <table class="final-scores-table">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Rank</th>
+                                                        <th>Player</th>
+                                                        <th>Territories</th>
+                                                        <th>Armies</th>
+                                                        <th>Continent Bonus</th>
+                                                        <th>Total Score</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    ${tournamentStatus.game_result.final_scores.map((player, index) => `
+                                                        <tr class="${index === 0 ? 'winner-row' : ''}">
+                                                            <td>${index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : index + 1}</td>
+                                                            <td>${escapeHtml(player.player_name)}</td>
+                                                            <td>${player.territory_count}</td>
+                                                            <td>${player.army_count}</td>
+                                                            <td>${player.continent_bonus}</td>
+                                                            <td><strong>${player.total_score}</strong></td>
+                                                        </tr>
+                                                    `).join('')}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        ` : ''}
+                        
+                        <!-- Character Leaderboard -->
+                        <div class="leaderboard-section">
+                            <h3>🏅 Character Leaderboard</h3>
+                            <p class="leaderboard-subtitle">Top performing characters across all tournaments (${characterLeaderboardData.games_analyzed || 0} games analyzed)</p>
+                            
+                            ${characterLeaderboard.length > 0 ? `
+                                <div class="leaderboard-container">
+                                    <table class="leaderboard-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Rank</th>
+                                                <th>Character</th>
+                                                <th>Games</th>
+                                                <th>Win Rate</th>
+                                                <th>Success Rate</th>
+                                                <th class="mobile-hide">Attacks/Game</th>
+                                                <th class="mobile-hide">Messages/Game</th>
+                                                <th class="mobile-hide">Card Trades/Game</th>
+                                                <th class="mobile-hide">Fortifications/Game</th>
+                                                <th class="mobile-hide">Army Placements/Game</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${characterLeaderboard.slice(0, 10).map((character, index) => `
+                                                <tr class="${index < 3 ? 'top-player' : ''}">
+                                                    <td class="rank-cell">
+                                                        ${index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : index + 1}
+                                                    </td>
+                                                    <td class="player-name">${escapeHtml(character.character_name)}</td>
+                                                    <td>${character.games_played}</td>
+                                                    <td class="win-rate">${character.win_rate}%</td>
+                                                    <td class="success-rate">${character.success_rate}%</td>
+                                                    <td class="mobile-hide">${character.attacks_per_game}</td>
+                                                    <td class="mobile-hide">${character.messages_per_game}</td>
+                                                    <td class="mobile-hide">${character.card_trades_per_game}</td>
+                                                    <td class="mobile-hide">${character.fortifications_per_game}</td>
+                                                    <td class="mobile-hide">${character.army_placements_per_game}</td>
+                                                </tr>
+                                            `).join('')}
+                                        </tbody>
+                                    </table>
+                                    
+                                    ${characterLeaderboard.length > 10 ? `
+                                        <div class="show-more-container">
+                                            <button class="show-more-btn" onclick="toggleCharacterLeaderboard()">
+                                                Show All ${characterLeaderboard.length} Characters
+                                            </button>
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            ` : `
+                                <div class="leaderboard-container">
+                                    <div style="text-align: center; padding: 40px; color: #666;">
+                                        <div style="font-size: 3rem; margin-bottom: 20px;">📊</div>
+                                        <h4 style="margin-bottom: 10px;">No Character Data Yet</h4>
+                                        <p>Character leaderboards will appear after tournaments are completed.</p>
+                                        <p style="font-size: 0.9rem; margin-top: 10px; opacity: 0.8;">
+                                            Complete some games to see rankings here!
+                                        </p>
+                                    </div>
+                                </div>
+                            `}
+                        </div>
+                        
+                        <!-- Model Leaderboard -->
+                        <div class="leaderboard-section">
+                            <h3>🤖 AI Model Leaderboard</h3>
+                            <p class="leaderboard-subtitle">Most effective AI models in tournament play</p>
+                            
+                            ${modelLeaderboard.length > 0 ? `
+                                <div class="leaderboard-container">
+                                    <table class="leaderboard-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Rank</th>
+                                                <th>Model</th>
+                                                <th>Games</th>
+                                                <th>Win Rate</th>
+                                                <th>Success Rate</th>
+                                                <th class="mobile-hide">Attacks/Game</th>
+                                                <th class="mobile-hide">Messages/Game</th>
+                                                <th class="mobile-hide">Card Trades/Game</th>
+                                                <th class="mobile-hide">Fortifications/Game</th>
+                                                <th class="mobile-hide">Army Placements/Game</th>
+                                                <th>Avg Decision Time</th>
+                                                <th class="mobile-hide">Players</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${modelLeaderboard.map((model, index) => `
+                                                <tr class="${index < 3 ? 'top-model' : ''}">
+                                                    <td class="rank-cell">
+                                                        ${index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : index + 1}
+                                                    </td>
+                                                    <td class="model-name">${escapeHtml(model.model_name)}</td>
+                                                    <td>${model.games_played}</td>
+                                                    <td class="win-rate">${model.win_rate}%</td>
+                                                    <td class="success-rate">${model.success_rate}%</td>
+                                                    <td class="mobile-hide">${model.attacks_per_game}</td>
+                                                    <td class="mobile-hide">${model.messages_per_game}</td>
+                                                    <td class="mobile-hide">${model.card_trades_per_game}</td>
+                                                    <td class="mobile-hide">${model.fortifications_per_game}</td>
+                                                    <td class="mobile-hide">${model.army_placements_per_game}</td>
+                                                    <td>${model.avg_decision_time}s</td>
+                                                    <td class="mobile-hide">${model.unique_players}</td>
+                                                </tr>
+                                            `).join('')}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            ` : `
+                                <div class="leaderboard-container">
+                                    <div style="text-align: center; padding: 40px; color: #666;">
+                                        <div style="font-size: 3rem; margin-bottom: 20px;">🤖</div>
+                                        <h4 style="margin-bottom: 10px;">No Model Data Yet</h4>
+                                        <p>AI model leaderboards will appear after tournaments are completed.</p>
+                                        <p style="font-size: 0.9rem; margin-top: 10px; opacity: 0.8;">
+                                            Complete some games to see model performance rankings!
+                                        </p>
+                                    </div>
+                                </div>
+                            `}
+                        </div>
+                        
+                        
+                        <!-- Start Over Section -->
+                        <div class="restart-section">
+                            <div class="restart-message">
+                                🎯 Ready for another tournament?
+                            </div>
+                            <button class="submit-btn restart-btn" onclick="startNewTournament()">
+                                🚀 Start New Tournament
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+                // Store full leaderboard data for show more functionality
+                window.fullCharacterLeaderboard = characterLeaderboard;
+                
+            } catch (error) {
+                console.error('Error loading end phase:', error);
+                container.innerHTML = `
+                    <div class="end-screen">
+                        <h2>Tournament Complete!</h2>
+                        <div class="error-message">
+                            Failed to load results and leaderboards. Please refresh the page.
+                        </div>
+                        <button class="submit-btn" onclick="window.location.reload()" style="margin-top: 20px;">
+                            🔄 Refresh Page
+                        </button>
+                    </div>
+                `;
+            }
+        }
+
+        // Toggle full character leaderboard
+        function toggleCharacterLeaderboard() {
+            const tbody = document.querySelector('.leaderboard-section .leaderboard-table tbody');
+            const button = document.querySelector('.show-more-btn');
+            
+            if (!window.fullCharacterLeaderboard) return;
+            
+            const isShowingAll = button.textContent.includes('Show Less');
+            
+            if (isShowingAll) {
+                // Show only top 10
+                tbody.innerHTML = window.fullCharacterLeaderboard.slice(0, 10).map((character, index) => `
+                    <tr class="${index < 3 ? 'top-player' : ''}">
+                        <td class="rank-cell">
+                            ${index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : index + 1}
+                        </td>
+                        <td class="player-name">${escapeHtml(character.character_name)}</td>
+                        <td>${character.games_played}</td>
+                        <td class="win-rate">${character.win_rate}%</td>
+                        <td class="success-rate">${character.success_rate}%</td>
+                        <td class="mobile-hide">${character.attacks_per_game}</td>
+                        <td class="mobile-hide">${character.messages_per_game}</td>
+                        <td class="mobile-hide">${character.card_trades_per_game}</td>
+                        <td class="mobile-hide">${character.fortifications_per_game}</td>
+                        <td class="mobile-hide">${character.army_placements_per_game}</td>
+                    </tr>
+                `).join('');
+                button.textContent = `Show All ${window.fullCharacterLeaderboard.length} Characters`;
+            } else {
+                // Show all characters
+                tbody.innerHTML = window.fullCharacterLeaderboard.map((character, index) => `
+                    <tr class="${index < 3 ? 'top-player' : ''}">
+                        <td class="rank-cell">
+                            ${index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : index + 1}
+                        </td>
+                        <td class="player-name">${escapeHtml(character.character_name)}</td>
+                        <td>${character.games_played}</td>
+                        <td class="win-rate">${character.win_rate}%</td>
+                        <td class="success-rate">${character.success_rate}%</td>
+                        <td class="mobile-hide">${character.attacks_per_game}</td>
+                        <td class="mobile-hide">${character.messages_per_game}</td>
+                        <td class="mobile-hide">${character.card_trades_per_game}</td>
+                        <td class="mobile-hide">${character.fortifications_per_game}</td>
+                        <td class="mobile-hide">${character.army_placements_per_game}</td>
+                    </tr>
+                `).join('');
+                button.textContent = 'Show Less';
+            }
+        }
+
+        // Handle character submission
+        async function handleSubmitCharacter(event) {
+            event.preventDefault();
+            
+            const characterData = {
+                name: document.getElementById('character-name').value.trim(),
+                temperature: parseFloat(document.getElementById('temperature').value),
+                personality: document.getElementById('personality').value.trim(),
+                custom_instructions: document.getElementById('custom-instructions').value.trim(),
+                submitted_by: document.getElementById('submitted-by').value.trim() || 'Anonymous'
+            };
+
+            try {
+                const response = await fetch('/api/tournament/characters', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(characterData)
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    showSuccess('Character submitted successfully!');
+                    event.target.reset();
+                    document.getElementById('temperature-value').textContent = '0.7';
+                } else {
+                    showError(result.message || 'Failed to submit character.');
+                }
+            } catch (error) {
+                console.error('Error submitting character:', error);
+                showError('Failed to submit character. Please try again.');
+            }
+        }
+
+        // Select character for voting
+        function selectCharacter(characterId) {
+            if (hasVoted) return;
+
+            // Remove previous selection
+            document.querySelectorAll('.character-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+
+            // Select new character
+            const card = document.querySelector(`[data-character-id="${characterId}"]`);
+            if (card) {
+                card.classList.add('selected');
+                selectedCharacter = characterId;
+                document.getElementById('vote-btn').disabled = false;
+            }
+        }
+
+        // Submit vote
+        async function submitVote() {
+            if (!selectedCharacter || hasVoted) return;
+
+            try {
+                const response = await fetch('/api/tournament/vote', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        character_id: selectedCharacter,
+                        voter_session: generateSessionId()
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    markAsVoted();
+                    showSuccess('Vote submitted successfully!');
+                    // Refresh the voting view
+                    updateContent();
+                } else {
+                    showError(result.message || 'Failed to submit vote.');
+                }
+            } catch (error) {
+                console.error('Error submitting vote:', error);
+                showError('Failed to submit vote. Please try again.');
+            }
+        }
+
+        // Generate session ID for voting
+        function generateSessionId() {
+            let sessionId = localStorage.getItem('tournament_session_id');
+            if (!sessionId) {
+                sessionId = 'session_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
+                localStorage.setItem('tournament_session_id', sessionId);
+            }
+            return sessionId;
+        }
+
+        // Shuffle array utility function
+        function shuffleArray(array) {
+            const shuffled = [...array];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
+
+        // Utility functions
+        function showError(message) {
+            const messageDiv = document.getElementById('submit-message') || document.getElementById('vote-message');
+            if (messageDiv) {
+                messageDiv.innerHTML = `<div class="error-message">${escapeHtml(message)}</div>`;
+            }
+        }
+
+        function showSuccess(message) {
+            const messageDiv = document.getElementById('submit-message') || document.getElementById('vote-message');
+            if (messageDiv) {
+                messageDiv.innerHTML = `<div class="success-message">${escapeHtml(message)}</div>`;
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Start new tournament
+        async function startNewTournament() {
+            const button = document.querySelector('.restart-btn');
+            const originalText = button.textContent;
+            
+            try {
+                button.disabled = true;
+                button.textContent = '🔄 Starting...';
+                
+                const response = await fetch('/api/tournament/restart', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    button.textContent = '✅ Started!';
+                    // Refresh the page after a short delay to show the new tournament
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                } else {
+                    throw new Error(result.message || 'Failed to start tournament');
+                }
+                
+            } catch (error) {
+                console.error('Error starting new tournament:', error);
+                button.textContent = originalText;
+                button.disabled = false;
+                
+                // Show error message
+                const restartSection = document.querySelector('.restart-section');
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'error-message';
+                errorDiv.style.marginTop = '20px';
+                errorDiv.textContent = `Failed to start new tournament: ${error.message}`;
+                restartSection.appendChild(errorDiv);
+                
+                // Remove error message after 5 seconds
+                setTimeout(() => {
+                    if (errorDiv.parentNode) {
+                        errorDiv.parentNode.removeChild(errorDiv);
+                    }
+                }, 5000);
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchTournamentStatus();
+            
+            // Periodic server sync every 30 seconds (much less frequent)
+            setInterval(() => {
+                // Only sync if we haven't synced recently due to other actions
+                const timeSinceLastSync = Date.now() - lastServerSync;
+                if (timeSinceLastSync > 25000) { // 25 seconds
+                    console.log('Periodic server sync');
+                    fetchTournamentStatus();
+                }
+            }, 30000);
+        });
+
+        // Get winner method display text
+        function getWinnerMethodDisplay(method) {
+            const methodDisplays = {
+                'territory_control': '🏰 Territory Control',
+                'continent_control': '🌍 Continent Domination',
+                'army_strength': '⚔️ Military Superiority',
+                'sole_survivor': '👑 Last Player Standing',
+                'tied_random_selection': '🎲 Tiebreaker (Random)',
+                'random_fallback': '🎲 Random Selection',
+                'time_expired': '⏰ Time Limit Victory',
+                'time_expired_fallback': '⏰ Time Limit (Fallback)',
+                'victory': '🏆 Complete Victory'
+            };
+            
+            return methodDisplays[method] || method.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        }
+
+        // Start game creation process with retry logic
+        async function startGameCreationProcess() {
+            if (gameCreationInProgress) {
+                console.log('Game creation already in progress, skipping...');
+                return;
+            }
+            
+            gameCreationInProgress = true;
+            gameCreationAttempts = 0;
+            
+            console.log('Starting game creation process...');
+            
+            // Start aggressive polling for game while creating
+            startGameMissingPolling();
+            
+            // Attempt game creation with retries
+            await attemptGameCreation();
+        }
+
+        // Attempt game creation with exponential backoff
+        async function attemptGameCreation() {
+            const maxAttempts = 3;
+            
+            while (gameCreationAttempts < maxAttempts && gameCreationInProgress) {
+                gameCreationAttempts++;
+                console.log(`Game creation attempt ${gameCreationAttempts}/${maxAttempts}`);
+                
+                try {
+                    const createResponse = await fetch('/api/tournament/create-game', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    
+                    const createResult = await createResponse.json();
+                    console.log('Create game result:', createResult);
+                    
+                    if (createResult.success) {
+                        console.log('Game created successfully!');
+                        gameCreationInProgress = false;
+                        stopGameMissingPolling();
+                        
+                        // Refresh status to get game_id
+                        setTimeout(() => {
+                            fetchTournamentStatus();
+                        }, 1000);
+                        return;
+                    } else {
+                        console.error(`Game creation failed (attempt ${gameCreationAttempts}):`, createResult.message);
+                    }
+                } catch (error) {
+                    console.error(`Game creation error (attempt ${gameCreationAttempts}):`, error);
+                }
+                
+                // Wait before retry with exponential backoff
+                if (gameCreationAttempts < maxAttempts) {
+                    const delay = Math.min(2000 * Math.pow(2, gameCreationAttempts - 1), 10000); // 2s, 4s, 8s max
+                    console.log(`Waiting ${delay}ms before retry...`);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                }
+            }
+            
+            // All attempts failed
+            console.error('All game creation attempts failed');
+            gameCreationInProgress = false;
+            // Keep polling - maybe backend will recover
+        }
+
+        // Start polling for missing game
+        function startGameMissingPolling() {
+            if (gameMissingPollInterval) {
+                clearInterval(gameMissingPollInterval);
+            }
+            
+            console.log('Starting aggressive polling for missing game...');
+            gameMissingPollInterval = setInterval(() => {
+                console.log('Polling for game status...');
+                fetchTournamentStatus();
+            }, 2000); // Poll every 2 seconds
+        }
+
+        // Stop polling for missing game
+        function stopGameMissingPolling() {
+            if (gameMissingPollInterval) {
+                console.log('Stopping game missing polling');
+                clearInterval(gameMissingPollInterval);
+                gameMissingPollInterval = null;
+            }
+        }
+
+        // Start aggressive polling during starting game phase
+        function startStartingGamePolling() {
+            if (startingGamePollInterval) {
+                clearInterval(startingGamePollInterval);
+            }
+            
+            console.log('Starting aggressive polling during starting game phase...');
+            startingGamePollInterval = setInterval(() => {
+                console.log('Aggressive polling for game creation status...');
+                fetchTournamentStatus();
+            }, 2000); // Poll every 2 seconds during starting game phase
+        }
+
+        // Stop aggressive polling during starting game phase
+        function stopStartingGamePolling() {
+            if (startingGamePollInterval) {
+                console.log('Stopping starting game aggressive polling');
+                clearInterval(startingGamePollInterval);
+                startingGamePollInterval = null;
+            }
+        }
+
+        // Cleanup timer when page unloads
+        window.addEventListener('beforeunload', () => {
+            if (clientTimer) {
+                clearInterval(clientTimer);
+            }
+            if (gameMissingPollInterval) {
+                clearInterval(gameMissingPollInterval);
+            }
+            if (startingGamePollInterval) {
+                clearInterval(startingGamePollInterval);
+            }
+        });
+    </script>
+</body>
+</html>

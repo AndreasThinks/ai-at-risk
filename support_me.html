@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Support Me - AI at Risk</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 90%;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .nav-links {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .nav-link {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            margin: 0 10px;
+            border-radius: 25px;
+            transition: all 0.3s;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .nav-link:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .nav-link.current {
+            background: rgba(255, 255, 255, 0.4);
+            border-color: rgba(255, 255, 255, 0.6);
+        }
+
+        .content-section {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            max-width: 600px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .thank-you {
+            font-size: 1.5rem;
+            margin-bottom: 30px;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .payment-options {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 25px;
+            margin: 30px 0;
+        }
+
+        .payment-button {
+            display: inline-block;
+            padding: 15px 30px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 1.1rem;
+            transition: all 0.3s;
+            color: white;
+            min-width: 220px;
+            text-align: center;
+        }
+
+        .paypal-button {
+            background: linear-gradient(135deg, #0070ba 0%, #005ea6 100%);
+            box-shadow: 0 4px 15px rgba(0, 112, 186, 0.3);
+        }
+
+        .paypal-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 112, 186, 0.4);
+        }
+
+        .bitcoin-button {
+            background: linear-gradient(135deg, #f7931a 0%, #e67e22 100%);
+            box-shadow: 0 4px 15px rgba(247, 147, 26, 0.3);
+        }
+
+        .bitcoin-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(247, 147, 26, 0.4);
+        }
+
+        .loading, .no-payment {
+            color: #666;
+            font-style: italic;
+            margin: 20px 0;
+        }
+
+        .bitcoin-details {
+            margin-top: 15px;
+        }
+
+        .bitcoin-address {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 10px;
+            font-family: 'Courier New', monospace;
+            word-break: break-all;
+            font-size: 0.9rem;
+            color: #495057;
+        }
+        
+        .email-support {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e9ecef;
+            color: #555;
+        }
+
+        /* Mobile Styles */
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+                max-width: 100%;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .header p {
+                font-size: 1rem;
+            }
+
+            .nav-link {
+                display: block;
+                margin: 5px auto;
+                max-width: 250px;
+            }
+
+            .content-section {
+                padding: 25px 20px;
+                margin: 0;
+            }
+
+            .thank-you {
+                font-size: 1.3rem;
+            }
+
+            .payment-button {
+                width: 100%;
+                max-width: 300px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 5px;
+            }
+
+            .header h1 {
+                font-size: 1.5rem;
+            }
+
+            .content-section {
+                padding: 20px 15px;
+            }
+
+            .thank-you {
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>❤️ Support This Project ❤️</h1>
+            <p>Thank you for considering supporting AI at Risk!</p>
+        </div>
+
+        <div class="nav-links">
+            <a href="/tournament_interface.html" class="nav-link">🏆 Tournament</a>
+            <a href="/tournament_leaderboard.html" class="nav-link">📊 Leaderboard</a>
+            <a href="/character_library.html" class="nav-link">📚 Character Library</a>
+            <a href="/about_this.html" class="nav-link">🔮 About This</a>
+            <a href="/support_me.html" class="nav-link current">❤️ Support Me</a>
+        </div>
+
+        <div class="content-section">
+            <div class="thank-you">
+                This is my silly little side project which has gotten somewhat out of hand. If you've enjoyed it, any help paying my token and hosting costs is much appreciated!
+            </div>
+
+            <div id="payment-container">
+                <div class="loading">Loading payment options...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function loadPaymentOptions() {
+            const container = document.getElementById('payment-container');
+            try {
+                const response = await fetch('/api/support-config');
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const config = await response.json();
+                
+                if (!config.has_paypal && !config.has_bitcoin) {
+                    container.innerHTML = '<div class="no-payment">Payment options are not currently configured.</div>';
+                    return;
+                }
+                
+                let paymentHtml = '<div class="payment-options">';
+                
+                if (config.has_paypal && config.paypal_url) {
+                    paymentHtml += `
+                        <a href="${config.paypal_url}" target="_blank" class="payment-button paypal-button">
+                            💳 Donate via PayPal
+                        </a>
+                    `;
+                }
+                
+                if (config.has_bitcoin && config.bitcoin_address) {
+                    const bitcoinUri = `bitcoin:${config.bitcoin_address}`;
+                    paymentHtml += `
+                        <div class="bitcoin-details">
+                            <a href="${bitcoinUri}" class="payment-button bitcoin-button">
+                                ₿ Donate Bitcoin
+                            </a>
+                            <div class="bitcoin-address">
+                                <strong>Bitcoin Address:</strong><br>
+                                ${config.bitcoin_address}
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                paymentHtml += '</div>';
+
+                const supportEmailHtml = `
+                    <div class="email-support">
+                        You can also drop me an email at <a href="mailto:support@ai-at-play.online">support@ai-at-play.online</a>
+                    </div>
+                `;
+
+                container.innerHTML = paymentHtml + supportEmailHtml;
+                
+            } catch (error) {
+                console.error('Error loading payment options:', error);
+                container.innerHTML = '<div class="no-payment">Error loading payment options. Please try again later.</div>';
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', loadPaymentOptions);
+    </script>
+</body>
+</html>

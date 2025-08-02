@@ -1,0 +1,31 @@
+[project]
+name = "risk-mcp"
+version = "0.1.0"
+description = "A text-based Risk board game playable via MCP"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "mcp>=1.0.0",
+    "pydantic>=2.0.0",
+    "typing-extensions>=4.0.0",
+    "langchain>=0.1.0",
+    "langchain-openai>=0.1.0",
+    "langchain-anthropic>=0.1.0",
+    "langchain-google-genai>=1.0.0",
+    "langchain-community>=0.1.0",
+    "fastapi>=0.104.0",
+    "uvicorn[standard]>=0.24.0",
+    "requests>=2.31.0",
+    "fastapi-mcp>=0.3.4",
+    "colorama>=0.4.6",
+    "langchain-ollama>=0.3.4",
+    "langchain-mcp-adapters>=0.1.9",
+    "langgraph>=0.5.3",
+    "tiktoken>=0.5.0",
+    "python-dotenv>=1.1.1",
+    "python-fasthtml>=0.12.21",
+]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"

@@ -1,0 +1,3692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: white;
+            font-size: 2em;
+            font-weight: 300;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            margin-bottom: 5px;
+        }
+
+        .header .subtitle {
+            color: rgba(255,255,255,0.8);
+            font-size: 1em;
+            font-weight: 300;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .grid-two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .full-width {
+            grid-column: 1 / -1;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .card-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            font-size: 1.5em;
+            color: white;
+        }
+
+        .card-title {
+            font-size: 1.4em;
+            font-weight: 600;
+            color: #2c3e50;
+            flex: 1;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #27ae60;
+            animation: pulse 2s infinite;
+        }
+
+        .status-indicator.thinking {
+            background: #f39c12;
+            animation: thinking-pulse 1s infinite;
+        }
+
+        .status-indicator.waiting {
+            background: #95a5a6;
+            animation: none;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        @keyframes thinking-pulse {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.2); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #ecf0f1;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 8px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        .victory-progress {
+            background: linear-gradient(45deg, #27ae60, #2ecc71);
+        }
+
+        .turn-timer {
+            display: inline-block;
+            background: #f39c12;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
+        .action-status {
+            background: #e8f5e8;
+            border: 1px solid #27ae60;
+            border-radius: 8px;
+            padding: 10px;
+            margin: 10px 0;
+            font-size: 0.9em;
+            color: #27ae60;
+            font-weight: 500;
+        }
+
+        .action-status.thinking {
+            background: #fff3cd;
+            border-color: #f39c12;
+            color: #f39c12;
+        }
+
+        .action-status.waiting {
+            background: #f8f9fa;
+            border-color: #95a5a6;
+            color: #95a5a6;
+        }
+
+        .phase-indicator {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .phase-setup {
+            background: #3498db;
+            color: white;
+        }
+
+        .phase-reinforcement {
+            background: #27ae60;
+            color: white;
+        }
+
+        .phase-attack {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .phase-fortify {
+            background: #f39c12;
+            color: white;
+        }
+
+        .activity-pulse {
+            position: relative;
+        }
+
+        .activity-pulse::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            right: -15px;
+            width: 6px;
+            height: 6px;
+            background: #27ae60;
+            border-radius: 50%;
+            transform: translateY(-50%);
+            animation: activity-pulse 2s infinite;
+        }
+
+        @keyframes activity-pulse {
+            0%, 100% { opacity: 1; transform: translateY(-50%) scale(1); }
+            50% { opacity: 0.5; transform: translateY(-50%) scale(1.3); }
+        }
+
+        .loading-skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: loading-shimmer 1.5s infinite;
+            border-radius: 4px;
+            height: 20px;
+            margin: 8px 0;
+        }
+
+        @keyframes loading-shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        .threat-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-left: 5px;
+        }
+
+        .threat-high { background: #e74c3c; }
+        .threat-medium { background: #f39c12; }
+        .threat-low { background: #27ae60; }
+
+        .recent-highlight {
+            animation: recent-flash 3s ease-out;
+        }
+
+        @keyframes recent-flash {
+            0% { background-color: #fff3cd; }
+            100% { background-color: transparent; }
+        }
+
+        .continent-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .continent-item {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            border-left: 4px solid #3498db;
+        }
+
+        .continent-name {
+            font-size: 0.8em;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .continent-owner {
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .continent-bonus {
+            background: #27ae60;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-size: 0.7em;
+            margin-top: 3px;
+            display: inline-block;
+        }
+
+        .game-status .card-icon { background: linear-gradient(45deg, #3498db, #2980b9); }
+        .recent-decision .card-icon { background: linear-gradient(45deg, #e74c3c, #c0392b); }
+        .messages .card-icon { background: linear-gradient(45deg, #f39c12, #e67e22); }
+        .player-info .card-icon { background: linear-gradient(45deg, #9b59b6, #8e44ad); }
+        .continent-control .card-icon { background: linear-gradient(45deg, #27ae60, #2ecc71); }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #ecf0f1;
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #34495e;
+        }
+
+        .info-value {
+            color: #2c3e50;
+            font-weight: 500;
+        }
+
+        .highlight {
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 600;
+        }
+
+        .decision-box {
+            background: #f8f9fa;
+            border-left: 4px solid #e74c3c;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+
+        .decision-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .decision-reasoning {
+            font-style: italic;
+            line-height: 1.6;
+            color: #2c3e50;
+        }
+
+        .tools-used {
+            margin-top: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+
+        .tool-tag {
+            background: #3498db;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: 500;
+        }
+
+        .message-item {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            border-left: 4px solid #f39c12;
+        }
+
+        .message-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+        }
+
+        .message-from {
+            font-weight: 600;
+            color: #e67e22;
+        }
+
+        .message-time {
+            color: #666;
+        }
+
+        .message-content {
+            color: #2c3e50;
+            line-height: 1.5;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-style: italic;
+        }
+
+        .error {
+            background: #e74c3c;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+
+        .last-updated {
+            text-align: center;
+            color: rgba(255,255,255,0.7);
+            font-size: 0.9em;
+            margin-top: 20px;
+        }
+
+        .player-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #ecf0f1;
+        }
+
+        .player-item:last-child {
+            border-bottom: none;
+        }
+
+        .player-name {
+            font-weight: 600;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+        }
+
+        .player-color-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+            margin-right: 8px;
+            border: 1px solid #ccc;
+        }
+
+        .player-stats {
+            display: flex;
+            gap: 15px;
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .continent-bonus {
+            background: #27ae60;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            margin-left: 5px;
+        }
+
+        .scrollable-log {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ecf0f1;
+            border-radius: 8px;
+            padding: 15px;
+            background: #f8f9fa;
+        }
+
+        .log-entry {
+            padding: 8px 0;
+            border-bottom: 1px solid #e9ecef;
+            font-size: 0.9em;
+        }
+
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+
+        .log-timestamp {
+            color: #666;
+            font-size: 0.8em;
+            margin-right: 10px;
+        }
+
+        .log-type-action {
+            color: #e74c3c;
+            font-weight: 600;
+        }
+
+        .log-type-message {
+            color: #f39c12;
+            font-weight: 600;
+        }
+
+        .log-type-system {
+            color: #3498db;
+            font-weight: 600;
+        }
+
+        .expand-button {
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: 500;
+            transition: transform 0.2s ease;
+            margin-top: 10px;
+        }
+
+        .expand-button:hover {
+            transform: translateY(-1px);
+        }
+
+        .expanded-section {
+            display: none;
+            margin-top: 20px;
+        }
+
+        .expanded-section.visible {
+            display: block;
+        }
+
+        .strategy-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 15px 0;
+        }
+
+        .strategy-player {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            border-left: 4px solid #3498db;
+        }
+
+        .strategy-player:nth-child(2) {
+            border-left-color: #e74c3c;
+        }
+
+        .strategy-player:nth-child(3) {
+            border-left-color: #27ae60;
+        }
+
+        .strategy-player:nth-child(4) {
+            border-left-color: #f39c12;
+        }
+
+        .strategy-player:nth-child(5) {
+            border-left-color: #9b59b6;
+        }
+
+        .strategy-player:nth-child(6) {
+            border-left-color: #1abc9c;
+        }
+
+        .strategy-player-name {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+
+        .strategy-player-name::before {
+            content: "🎯";
+            margin-right: 8px;
+        }
+
+        .strategy-item {
+            margin-bottom: 15px;
+        }
+
+        .strategy-label {
+            font-weight: 600;
+            color: #34495e;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 5px;
+        }
+
+        .strategy-content {
+            background: white;
+            border: 1px solid #e3e6ea;
+            border-radius: 8px;
+            padding: 12px;
+            font-style: italic;
+            color: #2c3e50;
+            line-height: 1.4;
+            min-height: 40px;
+        }
+
+        .strategy-content.empty {
+            color: #666;
+            font-style: normal;
+            text-align: center;
+        }
+
+        .strategy-timestamp {
+            font-size: 0.75em;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        /* Agent Decision History Styles */
+        .decision-navigation {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 10px 0;
+            border-bottom: 1px solid #ecf0f1;
+        }
+
+        .decision-counter {
+            font-size: 0.9em;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .decision-nav-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .decision-nav-btn {
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 0.8em;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            min-width: 70px;
+        }
+
+        .decision-nav-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 8px rgba(52, 152, 219, 0.3);
+        }
+
+        .decision-nav-btn:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .decision-history-container {
+            position: relative;
+            min-height: 200px;
+        }
+
+        .decision-item {
+            animation: slideInDecision 0.3s ease;
+        }
+
+        @keyframes slideInDecision {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .strategy-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .decision-navigation {
+                flex-direction: column;
+                gap: 10px;
+                align-items: stretch;
+            }
+            
+            .decision-nav-buttons {
+                justify-content: center;
+            }
+            
+            .decision-nav-btn {
+                min-width: 60px;
+                font-size: 0.75em;
+                padding: 5px 10px;
+            }
+        }
+
+        /* Floating Activity Panel */
+        .activity-panel {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 350px;
+            max-height: 70vh;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            z-index: 1000;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+        }
+
+        .activity-panel.open {
+            transform: translateX(0);
+        }
+
+        .activity-panel-header {
+            padding: 15px 20px;
+            border-bottom: 2px solid #f0f0f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            color: white;
+            border-radius: 15px 15px 0 0;
+        }
+
+        .activity-panel-title {
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+
+        .activity-panel-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.2em;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 50%;
+            transition: background 0.2s ease;
+        }
+
+        .activity-panel-close:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .activity-panel-content {
+            max-height: calc(70vh - 60px);
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .activity-panel-item {
+            padding: 10px;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 0.9em;
+            animation: slide-in 0.3s ease;
+        }
+
+        .activity-panel-item:last-child {
+            border-bottom: none;
+        }
+
+        .activity-panel-item.new {
+            background: #e8f5e8;
+            animation: highlight-new 2s ease;
+        }
+
+        @keyframes slide-in {
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        @keyframes highlight-new {
+            0% { background: #d4edda; }
+            100% { background: transparent; }
+        }
+
+        .activity-panel-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2em;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            z-index: 1001;
+            transition: transform 0.2s ease;
+        }
+
+        .activity-panel-toggle:hover {
+            transform: scale(1.1);
+        }
+
+        .activity-panel-toggle.hidden {
+            display: none;
+        }
+
+        /* Activity Ticker */
+        .activity-ticker {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 40px;
+            background: linear-gradient(45deg, #2c3e50, #34495e);
+            color: white;
+            z-index: 999;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+        }
+
+        .activity-ticker-content {
+            display: flex;
+            animation: ticker-scroll 30s linear infinite;
+            white-space: nowrap;
+        }
+
+        .activity-ticker-item {
+            margin-right: 50px;
+            font-size: 0.9em;
+            display: flex;
+            align-items: center;
+        }
+
+        .activity-ticker-item::before {
+            content: "•";
+            margin-right: 10px;
+            color: #3498db;
+        }
+
+        @keyframes ticker-scroll {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+        }
+
+        /* Adjust body padding for ticker */
+        body.with-ticker {
+            padding-top: 60px;
+        }
+
+        /* Toast Notifications */
+        .toast-container {
+            position: fixed;
+            top: 60px;
+            right: 20px;
+            z-index: 1002;
+            pointer-events: none;
+        }
+
+        .toast {
+            background: white;
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-bottom: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            border-left: 4px solid #3498db;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            pointer-events: auto;
+            cursor: pointer;
+            max-width: 300px;
+        }
+
+        .toast.show {
+            transform: translateX(0);
+        }
+
+        .toast.attack {
+            border-left-color: #e74c3c;
+        }
+
+        .toast.message {
+            border-left-color: #f39c12;
+        }
+
+        .toast.decision {
+            border-left-color: #9b59b6;
+        }
+
+        .toast-content {
+            font-size: 0.9em;
+            line-height: 1.4;
+        }
+
+        .toast-time {
+            font-size: 0.8em;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        /* Risk Map Styles */
+        .risk-map-container {
+            position: relative;
+            width: 100%;
+            height: 400px;
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border-radius: 10px;
+            overflow: hidden;
+            border: 2px solid #e0e0e0;
+        }
+
+        .risk-map-svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .territory {
+            stroke: #2c3e50;
+            stroke-width: 1.5;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .territory:hover {
+            stroke: #3498db;
+            stroke-width: 2.5;
+            filter: brightness(1.1);
+        }
+
+        .territory.current-player {
+            stroke: #f39c12;
+            stroke-width: 3;
+            animation: territory-pulse 2s infinite;
+        }
+
+        @keyframes territory-pulse {
+            0%, 100% { stroke-opacity: 1; }
+            50% { stroke-opacity: 0.6; }
+        }
+
+        .territory-label {
+            font-family: 'Segoe UI', sans-serif;
+            font-size: 10px;
+            font-weight: 600;
+            text-anchor: middle;
+            pointer-events: none;
+            fill: #2c3e50;
+            text-shadow: 1px 1px 2px rgba(255,255,255,0.8);
+        }
+
+        .army-count {
+            font-family: 'Segoe UI', sans-serif;
+            font-size: 12px;
+            font-weight: 700;
+            text-anchor: middle;
+            pointer-events: none;
+            fill: #2c3e50;
+            text-shadow: 1px 1px 2px rgba(255,255,255,0.9);
+        }
+
+        .continent-background {
+            opacity: 0.1;
+            pointer-events: none;
+        }
+
+
+        .map-tooltip {
+            position: fixed;
+            background: rgba(0,0,0,0.95);
+            color: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 0.9em;
+            font-weight: 500;
+            pointer-events: none;
+            z-index: 10000;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            max-width: 280px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            border: 2px solid #3498db;
+            line-height: 1.4;
+        }
+
+        .map-tooltip.visible {
+            opacity: 1;
+        }
+
+
+        .territory-connection {
+            stroke: #34495e;
+            stroke-width: 1;
+            stroke-dasharray: 3,3;
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .territory-connection.highlighted {
+            stroke: #e74c3c;
+            stroke-width: 2;
+            opacity: 1;
+            stroke-dasharray: none;
+        }
+
+        .territory.highlighted-connected {
+            stroke: #e74c3c;
+            stroke-width: 3;
+            filter: brightness(1.2);
+        }
+
+        /* Action Effects */
+        .territory.effect-attack {
+            animation: pulse-red 1s infinite;
+        }
+
+        .territory.effect-reinforce {
+            animation: pulse-blue 1.2s infinite;
+        }
+
+        .territory.effect-fortify {
+            animation: pulse-green 1.5s infinite;
+        }
+
+        .territory.effect-conquered {
+            animation: flash-yellow 0.8s ease-out;
+        }
+
+        @keyframes pulse-red {
+            0% { stroke: #e74c3c; stroke-width: 2.5; }
+            50% { stroke: #c0392b; stroke-width: 4; }
+            100% { stroke: #e74c3c; stroke-width: 2.5; }
+        }
+
+        @keyframes pulse-blue {
+            0% { stroke: #3498db; stroke-width: 2.5; }
+            50% { stroke: #2980b9; stroke-width: 4; }
+            100% { stroke: #3498db; stroke-width: 2.5; }
+        }
+
+        @keyframes pulse-green {
+            0% { stroke: #2ecc71; stroke-width: 2.5; }
+            50% { stroke: #27ae60; stroke-width: 4; }
+            100% { stroke: #2ecc71; stroke-width: 2.5; }
+        }
+
+        @keyframes flash-yellow {
+            0%, 100% { fill-opacity: 1; }
+            50% { fill-opacity: 0.5; filter: brightness(1.5); }
+        }
+
+        @media (max-width: 1200px) {
+            .grid, .grid-two-col {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .grid, .grid-two-col {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .card {
+                padding: 20px;
+            }
+
+            .activity-panel {
+                width: 90vw;
+                right: 5vw;
+            }
+
+            .activity-ticker {
+                font-size: 0.8em;
+            }
+
+            .risk-map-container {
+                height: 300px;
+            }
+
+            .territory-label {
+                font-size: 8px;
+            }
+
+            .army-count {
+                font-size: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Activity Ticker -->
+    <div class="activity-ticker" id="activity-ticker">
+        <div class="activity-ticker-content" id="ticker-content">
+            <div class="activity-ticker-item">Welcome to Risk Game Dashboard</div>
+        </div>
+    </div>
+
+    <!-- Activity Panel Toggle Button -->
+    <button class="activity-panel-toggle" id="activity-toggle" onclick="toggleActivityPanel()">
+        📊
+    </button>
+
+    <!-- Floating Activity Panel -->
+    <div class="activity-panel" id="activity-panel">
+        <div class="activity-panel-header">
+            <div class="activity-panel-title">🔥 Live Activity</div>
+            <button class="activity-panel-close" onclick="toggleActivityPanel()">×</button>
+        </div>
+        <div class="activity-panel-content" id="activity-panel-content">
+            <div style="text-align: center; padding: 20px; color: #666;">
+                Loading activity...
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <div class="container">
+        <div class="header">
+            <div style="margin-top: 10px;">
+                <button onclick="switchToBriefingMode()" style="
+                    background: linear-gradient(45deg, #3498db, #2980b9);
+                    color: white;
+                    border: none;
+                    padding: 8px 16px;
+                    border-radius: 20px;
+                    cursor: pointer;
+                    font-size: 0.9em;
+                    font-weight: 500;
+                    transition: transform 0.2s ease;
+                    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+                    margin-right: 10px;
+                " onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='translateY(0)'">
+                    📊 Switch to Briefing Mode
+                </button>
+            </div>
+        </div>
+
+        <div class="grid">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon">🎮</div>
+                    <div class="card-title">Game Status</div>
+                    <div class="status-indicator"></div>
+                </div>
+                <div id="game-status-content">
+                    <div class="loading">Loading game status...</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon">🗺️</div>
+                    <div class="card-title">Risk World Map</div>
+                </div>
+                <div id="risk-map-content">
+                    <div class="loading">Loading world map...</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon">👥</div>
+                    <div class="card-title">Players</div>
+                </div>
+                <div id="players-content">
+                    <div class="loading">Loading players...</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card full-width continent-control">
+            <div class="card-header">
+                <div class="card-icon">🌍</div>
+                <div class="card-title">Continent Control</div>
+            </div>
+            <div id="continent-control-content">
+                <div class="loading">Loading continent control...</div>
+            </div>
+        </div>
+
+        <div class="grid-two-col" style="margin-top: 20px;">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon">🎯</div>
+                    <div class="card-title">Player Strategies</div>
+                </div>
+                <div id="strategies-content">
+                    <div class="loading">Loading strategies...</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon">🧠</div>
+                    <div class="card-title">Latest Agent Decision</div>
+                    <div id="decision-header-nav" style="display: none;">
+                        <!-- Navigation will be inserted here by JavaScript -->
+                    </div>
+                </div>
+                <div id="decision-content">
+                    <div class="loading">Loading latest decision...</div>
+                </div>
+            </div>
+        </div>
+
+            <div class="card full-width">
+                <div class="card-header">
+                    <div class="card-icon">💬</div>
+                    <div class="card-title">Recent Messages</div>
+                </div>
+                <div id="messages-content">
+                    <div class="loading">Loading messages...</div>
+                </div>
+                <button class="expand-button" onclick="toggleSection('full-messages')">
+                    📜 View Full Message History
+                </button>
+                <div id="full-messages" class="expanded-section">
+                    <div class="scrollable-log" id="full-messages-log">
+                        <div class="loading">Loading full message history...</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card full-width">
+                <div class="card-header">
+                    <div class="card-icon">📊</div>
+                    <div class="card-title">Game Activity Log</div>
+                </div>
+                <div>
+                    <p style="color: #666; margin-bottom: 15px;">Track all game events, decisions, and actions over time</p>
+                    <button class="expand-button" onclick="toggleSection('activity-log')">
+                        📋 View Complete Activity Log
+                    </button>
+                </div>
+                <div id="activity-log" class="expanded-section">
+                    <div class="scrollable-log" id="activity-log-content">
+                        <div class="loading">Loading activity log...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="last-updated" id="last-updated">
+            Last updated: Never
+        </div>
+    </div>
+
+    <script>
+        // Configuration - will be loaded dynamically
+        let API_CONFIG = null;
+        let currentGameId = null;
+        let updateInterval = null;
+
+        // Enhanced API base getter with validation and fallbacks
+        async function getApiBase() {
+            if (!API_CONFIG) {
+                await loadApiConfig();
+            }
+            
+            // Double-check the API base is valid
+            if (!API_CONFIG.apiBase || API_CONFIG.apiBase.includes('undefined')) {
+                console.warn('Invalid API config detected, forcing client-side detection');
+                API_CONFIG = null; // Reset to force re-detection
+                return await loadApiConfig();
+            }
+            
+            return API_CONFIG.apiBase;
+        }
+
+        async function loadApiConfig() {
+            try {
+                const response = await fetch('/api/config');
+                API_CONFIG = await response.json();
+                
+                // Validate the API base URL
+                if (!API_CONFIG.apiBase || API_CONFIG.apiBase === 'undefined') {
+                    throw new Error('Invalid API base URL from server');
+                }
+                
+                console.log('Loaded API config:', API_CONFIG);
+                return API_CONFIG.apiBase;
+            } catch (error) {
+                console.warn('Failed to load API config from server, using client-side detection:', error);
+                
+                // Client-side fallback detection
+                const protocol = window.location.protocol;
+                const hostname = window.location.hostname;
+                const port = window.location.port;
+                
+                let apiBase;
+                
+                if (hostname === 'localhost' || hostname === '127.0.0.1') {
+                    // Local development - use port 8080
+                    apiBase = `${protocol}//${hostname}:8080/api`;
+                } else {
+                    // Remote deployment - use same origin
+                    const portSuffix = (port && port !== '80' && port !== '443') ? `:${port}` : '';
+                    apiBase = `${protocol}//${hostname}${portSuffix}/api`;
+                }
+                
+                // Cache the fallback config
+                API_CONFIG = {
+                    apiBase: apiBase,
+                    environment: 'client-fallback',
+                    source: 'client-detection'
+                };
+                
+                console.log('Using fallback API config:', API_CONFIG);
+                return apiBase;
+            }
+        }
+
+        // Utility functions
+        function formatTime(dateString) {
+            if (!dateString) return 'Unknown';
+            const date = new Date(dateString);
+            return date.toLocaleTimeString();
+        }
+
+        function formatDateTime(dateString) {
+            if (!dateString) return 'Unknown';
+            const date = new Date(dateString);
+            return date.toLocaleString();
+        }
+
+        function showError(elementId, message) {
+            document.getElementById(elementId).innerHTML = `<div class="error">Error: ${message}</div>`;
+        }
+
+        function showLoading(elementId, message = 'Loading...') {
+            document.getElementById(elementId).innerHTML = `<div class="loading">${message}</div>`;
+        }
+
+        // API functions
+        async function fetchJson(url) {
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return await response.json();
+            } catch (error) {
+                console.error('Fetch error:', error);
+                throw error;
+            }
+        }
+
+        async function findActiveGame() {
+            try {
+                const API_BASE = await getApiBase();
+                const games = await fetchJson(`${API_BASE}/games`);
+                console.log('All games response:', games);
+                
+                if (!games.games || games.games.length === 0) {
+                    console.log('No games found');
+                    return null;
+                }
+
+                // Score games based on activity and player count
+                const scoredGames = games.games.map(game => {
+                    let score = 0;
+                    let playerCount = 0;
+                    
+                    // Handle both array and object formats for players
+                    if (game.players) {
+                        if (Array.isArray(game.players)) {
+                            playerCount = game.players.length;
+                        } else if (typeof game.players === 'object') {
+                            playerCount = Object.keys(game.players).length;
+                        }
+                    }
+                    
+                    // Score based on player count (more players = more active)
+                    score += playerCount * 10;
+                    
+                    // Bonus for games that aren't in setup phase
+                    if (game.phase && game.phase !== 'setup') {
+                        score += 20;
+                    }
+                    
+                    // Bonus for games with higher turn numbers (more active)
+                    if (game.turn_number && game.turn_number > 1) {
+                        score += game.turn_number * 2;
+                    }
+                    
+                    // Penalty for very old games (prefer recent activity)
+                    if (game.created_at) {
+                        const gameAge = Date.now() - new Date(game.created_at).getTime();
+                        const hoursOld = gameAge / (1000 * 60 * 60);
+                        if (hoursOld > 24) {
+                            score -= 10; // Penalty for games older than 24 hours
+                        }
+                    }
+                    
+                    console.log(`Game ${game.game_id}: ${playerCount} players, phase: ${game.phase}, turn: ${game.turn_number}, score: ${score}`);
+                    
+                    return {
+                        ...game,
+                        score,
+                        playerCount
+                    };
+                });
+
+                // Sort by score (highest first)
+                scoredGames.sort((a, b) => b.score - a.score);
+                
+                // Return the highest scoring game with at least one player
+                for (const game of scoredGames) {
+                    if (game.playerCount > 0) {
+                        console.log(`Selected active game: ${game.game_id} (score: ${game.score}, ${game.playerCount} players)`);
+                        return game.game_id;
+                    }
+                }
+                
+                // If no games have players, return the highest scoring game anyway
+                if (scoredGames.length > 0) {
+                    console.log(`No games with players found, using highest scoring game: ${scoredGames[0].game_id}`);
+                    return scoredGames[0].game_id;
+                }
+                
+                console.log('No suitable games found');
+                return null;
+            } catch (error) {
+                console.error('Error finding active game:', error);
+                return null;
+            }
+        }
+
+        async function updateGameStatus() {
+            if (!currentGameId) return;
+
+            try {
+                const API_BASE = await getApiBase();
+                // Get any player ID from the game to fetch status
+                const games = await fetchJson(`${API_BASE}/games`);
+                const currentGame = games.games && games.games.find(g => g.game_id === currentGameId);
+                
+                if (!currentGame) {
+                    showError('game-status-content', 'Game not found');
+                    return;
+                }
+
+                // Handle both array and object formats for players
+                let players = [];
+                if (currentGame.players) {
+                    if (Array.isArray(currentGame.players)) {
+                        players = currentGame.players;
+                    } else if (typeof currentGame.players === 'object') {
+                        players = Object.values(currentGame.players);
+                    }
+                }
+                
+                if (players.length === 0) {
+                    showError('game-status-content', 'No players found in game');
+                    return;
+                }
+
+                const playerId = players[0].player_id;
+                if (!playerId) {
+                    showError('game-status-content', 'Invalid player data');
+                    return;
+                }
+
+                const status = await fetchJson(`${API_BASE}/games/${currentGameId}/status?player_id=${playerId}`);
+                
+                const gameStatus = status.game_status || {};
+                const turnNumber = gameStatus.turn_number || 1;
+                const currentPlayer = gameStatus.current_player || 'Unknown';
+                const phase = gameStatus.phase || 'Unknown';
+                
+                // Check if game is over
+                if (phase === 'game_over') {
+                    showGameEndScreen(gameStatus);
+                    return;
+                }
+                
+                // Calculate game progress (assuming 42 territories total for victory)
+                const totalTerritories = 42;
+                let maxTerritories = 0;
+                let leadingPlayer = 'Unknown';
+                
+                players.forEach(player => {
+                    const territoryCount = player.territories?.length || 0;
+                    if (territoryCount > maxTerritories) {
+                        maxTerritories = territoryCount;
+                        leadingPlayer = player.name || 'Unknown';
+                    }
+                });
+                
+                const victoryProgress = (maxTerritories / totalTerritories) * 100;
+                
+                // Determine status indicator state
+                const statusIndicator = document.querySelector('.status-indicator');
+                if (statusIndicator) {
+                    statusIndicator.className = 'status-indicator';
+                    if (phase === 'attack' || phase === 'reinforcement') {
+                        statusIndicator.classList.add('thinking');
+                    } else if (phase === 'setup') {
+                        statusIndicator.classList.add('waiting');
+                    }
+                }
+                
+                // Create action status message
+                let actionStatus = '';
+                let actionClass = '';
+                
+                if (phase === 'reinforcement') {
+                    actionStatus = `🛡️ ${currentPlayer} is placing armies...`;
+                    actionClass = 'thinking';
+                } else if (phase === 'attack') {
+                    actionStatus = `⚔️ ${currentPlayer} is attacking territories...`;
+                    actionClass = 'thinking';
+                } else if (phase === 'fortify') {
+                    actionStatus = `🏰 ${currentPlayer} is fortifying positions...`;
+                    actionClass = 'thinking';
+                } else if (phase === 'setup') {
+                    actionStatus = `⚙️ Game is in setup phase`;
+                    actionClass = 'waiting';
+                } else {
+                    actionStatus = `⏳ Waiting for ${currentPlayer} to take action...`;
+                    actionClass = 'waiting';
+                }
+                
+                const content = `
+                    <div class="action-status ${actionClass}">
+                        ${actionStatus}
+                    </div>
+                    
+                    <div class="info-row">
+                        <span class="info-label">Turn Number</span>
+                        <span class="info-value highlight">${turnNumber}</span>
+                    </div>
+                    
+                    <div class="info-row">
+                        <span class="info-label">Game Phase</span>
+                        <span class="info-value">
+                            <span class="phase-indicator phase-${phase.toLowerCase()}">${phase}</span>
+                        </span>
+                    </div>
+                    
+                    <div class="info-row">
+                        <span class="info-label">Current Player</span>
+                        <span class="info-value">${currentPlayer}</span>
+                    </div>
+                    
+                    <div class="info-row">
+                        <span class="info-label">Victory Progress</span>
+                        <div style="flex: 1; margin-left: 15px;">
+                            <div class="progress-bar">
+                                <div class="progress-fill victory-progress" style="width: ${victoryProgress}%"></div>
+                            </div>
+                            <div style="font-size: 0.8em; color: #666; text-align: right;">
+                                ${leadingPlayer}: ${maxTerritories}/${totalTerritories} territories (${victoryProgress.toFixed(1)}%)
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="info-row">
+                        <span class="info-label">Game ID</span>
+                        <span class="info-value">${currentGameId}</span>
+                    </div>
+                `;
+                
+                document.getElementById('game-status-content').innerHTML = content;
+            } catch (error) {
+                console.error('updateGameStatus error:', error);
+                showError('game-status-content', error.message);
+            }
+        }
+
+        async function updatePlayers() {
+            if (!currentGameId) return;
+
+            try {
+                const API_BASE = await getApiBase();
+                const games = await fetchJson(`${API_BASE}/games`);
+                const currentGame = games.games && games.games.find(g => g.game_id === currentGameId);
+                
+                if (!currentGame) {
+                    showError('players-content', 'Game not found');
+                    return;
+                }
+
+                // Handle both array and object formats for players
+                let players = [];
+                if (currentGame.players) {
+                    if (Array.isArray(currentGame.players)) {
+                        players = currentGame.players;
+                    } else if (typeof currentGame.players === 'object') {
+                        players = Object.values(currentGame.players);
+                    }
+                }
+                
+                if (players.length === 0) {
+                    showError('players-content', 'No players found');
+                    return;
+                }
+
+                // Fetch game stats to get model assignments for all players
+                let gameStats = null;
+                try {
+                    gameStats = await fetchJson(`${API_BASE}/games/${currentGameId}/stats`);
+                } catch (error) {
+                    console.warn('Could not fetch game stats for model information:', error);
+                }
+
+                // Calculate threat levels and sort players
+                const playerColors = {
+                    0: '#3498db', 1: '#e74c3c', 2: '#27ae60', 3: '#f39c12', 4: '#9b59b6', 5: '#1abc9c'
+                };
+
+                const playersWithThreat = players.map((player, index) => {
+                    const territories = player.territories?.length || 0;
+                    const armies = player.army_count || 0;
+                    const cards = player.cards?.length || 0;
+                    
+                    // Calculate threat score
+                    const threatScore = territories * 2 + armies + cards * 3;
+                    
+                    let threatLevel = 'low';
+                    let threatClass = 'threat-low';
+                    
+                    if (threatScore > 30) {
+                        threatLevel = 'high';
+                        threatClass = 'threat-high';
+                    } else if (threatScore > 15) {
+                        threatLevel = 'medium';
+                        threatClass = 'threat-medium';
+                    }
+                    
+                    // Check if this is the current player
+                    const isCurrentPlayer = currentGame.current_player === player.name;
+                    const color = playerColors[index] || '#95a5a6';
+                    
+                // Get model information from game stats
+                let modelInfo = {
+                    model_name: 'Unknown',
+                    temperature: null
+                };
+                
+                if (gameStats && gameStats.player_models && gameStats.player_models[player.player_id]) {
+                    const playerModelData = gameStats.player_models[player.player_id];
+                    modelInfo.model_name = playerModelData.model_name || 'Unknown';
+                    modelInfo.temperature = playerModelData.temperature;
+                }
+                    
+                    return {
+                        ...player,
+                        territories,
+                        armies,
+                        cards,
+                        threatScore,
+                        threatLevel,
+                        threatClass,
+                        isCurrentPlayer,
+                        modelInfo,
+                        color
+                    };
+                });
+
+                // Sort by threat score (highest first)
+                playersWithThreat.sort((a, b) => b.threatScore - a.threatScore);
+
+                const playersHtml = playersWithThreat.map((player, index) => {
+                    const rankEmoji = index === 0 ? '👑' : index === 1 ? '🥈' : index === 2 ? '🥉' : '👤';
+                    const currentPlayerIndicator = player.isCurrentPlayer ? '<span class="turn-timer">ACTIVE</span>' : '';
+                    const activityClass = player.isCurrentPlayer ? 'activity-pulse' : '';
+                    
+                    // Format model information display
+                    const modelDisplay = player.modelInfo ? 
+                        `${player.modelInfo.model_name}${player.modelInfo.temperature ? ` (T:${player.modelInfo.temperature})` : ''}` : 
+                        'Unknown Model';
+                    
+                    return `
+                        <div class="player-item ${player.isCurrentPlayer ? 'recent-highlight' : ''}">
+                            <div>
+                                <div class="player-name ${activityClass}">
+                                    <div class="player-color-indicator" style="background-color: ${player.color};"></div>
+                                    ${rankEmoji} ${player.name || 'Unknown Player'}
+                                    ${currentPlayerIndicator}
+                                    <span class="threat-indicator ${player.threatClass}"></span>
+                                </div>
+                                <div style="font-size: 0.8em; color: #666; margin-left: 20px;">
+                                    Threat: ${player.threatLevel.toUpperCase()}
+                                </div>
+                                <div style="font-size: 0.75em; color: #3498db; margin-top: 2px; margin-left: 20px;">
+                                    🤖 ${modelDisplay}
+                                </div>
+                            </div>
+                            <div class="player-stats">
+                                <span title="Territories">🏰 ${player.territories}</span>
+                                <span title="Available Armies">⚔️ ${player.armies}</span>
+                                <span title="Cards in Hand">🃏 ${player.cards}</span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                // Add continent control summary if we can get board data
+                let continentSummary = '';
+                try {
+                    const playerId = players[0]?.player_id;
+                    if (playerId) {
+                        const boardData = await fetchJson(`${API_BASE}/games/${currentGameId}/board?player_id=${playerId}`);
+                        if (boardData && boardData.territories) {
+                            continentSummary = await generateContinentSummary(boardData.territories, playersWithThreat);
+                        }
+                    }
+                } catch (e) {
+                    console.error('Error getting continent control data:', e);
+                    // Show a basic continent control section even if there's an error
+                    continentSummary = `
+                        <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #ecf0f1;">
+                            <div style="font-weight: 600; color: #2c3e50; margin-bottom: 10px;">🌍 Continent Control</div>
+                            <div style="color: #666; font-style: italic;">Loading continent data...</div>
+                        </div>
+                    `;
+                }
+
+                document.getElementById('players-content').innerHTML = playersHtml;
+
+                // Update the separate continent control card
+                document.getElementById('continent-control-content').innerHTML = continentSummary;
+            } catch (error) {
+                console.error('updatePlayers error:', error);
+                showError('players-content', error.message);
+                showError('continent-control-content', 'Could not load continent data.');
+            }
+        }
+
+        // Cache for territory reference data
+        let territoryReferenceCache = null;
+
+        async function getTerritoryReference() {
+            if (!territoryReferenceCache) {
+                try {
+                    const API_BASE = await getApiBase();
+                    territoryReferenceCache = await fetchJson(`${API_BASE}/territories`);
+                } catch (error) {
+                    console.error('Failed to load territory reference data:', error);
+                    // Fallback to basic data if server endpoint fails
+                    territoryReferenceCache = {
+                        continents: {
+                            'North America': { territories: ['Alaska', 'Northwest Territory', 'Greenland', 'Alberta', 'Ontario', 'Quebec', 'Western United States', 'Eastern United States', 'Central America'], bonus: 5 },
+                            'South America': { territories: ['Venezuela', 'Brazil', 'Peru', 'Argentina'], bonus: 2 },
+                            'Europe': { territories: ['Iceland', 'Scandinavia', 'Ukraine', 'Great Britain', 'Northern Europe', 'Western Europe', 'Southern Europe'], bonus: 5 },
+                            'Africa': { territories: ['North Africa', 'Egypt', 'East Africa', 'Congo', 'South Africa', 'Madagascar'], bonus: 3 },
+                            'Asia': { territories: ['Ural', 'Siberia', 'Yakutsk', 'Kamchatka', 'Irkutsk', 'Mongolia', 'Japan', 'Afghanistan', 'China', 'Middle East', 'India', 'Siam'], bonus: 7 },
+                            'Australia': { territories: ['Indonesia', 'New Guinea', 'Western Australia', 'Eastern Australia'], bonus: 2 }
+                        }
+                    };
+                }
+            }
+            return territoryReferenceCache;
+        }
+
+        async function generateContinentSummary(territories, players) {
+            // Get authoritative territory data from server
+            const territoryRef = await getTerritoryReference();
+            const continents = territoryRef.continents || {};
+
+            const continentControl = {};
+            
+            // Check control for each continent using server data
+            Object.entries(continents).forEach(([continentName, continentData]) => {
+                const territoryList = continentData.territories || [];
+                const ownership = {};
+                let totalTerritories = territoryList.length;
+                let controlledTerritories = 0;
+                
+                territoryList.forEach(territoryName => {
+                    const territory = territories[territoryName];
+                    if (territory && territory.owner) {
+                        const owner = players.find(p => p.player_id === territory.owner);
+                        if (owner) {
+                            ownership[owner.name] = (ownership[owner.name] || 0) + 1;
+                            controlledTerritories++;
+                        }
+                    }
+                });
+                
+                // Find the player with the most territories in this continent
+                let controllingPlayer = null;
+                let maxTerritories = 0;
+                let isFullyControlled = false;
+                
+                Object.entries(ownership).forEach(([playerName, count]) => {
+                    if (count > maxTerritories) {
+                        maxTerritories = count;
+                        controllingPlayer = playerName;
+                        isFullyControlled = count === totalTerritories;
+                    }
+                });
+                
+                continentControl[continentName] = {
+                    controllingPlayer,
+                    maxTerritories,
+                    totalTerritories,
+                    isFullyControlled,
+                    controlPercentage: (maxTerritories / totalTerritories) * 100,
+                    bonus: continentData.bonus || 0
+                };
+            });
+
+            // Generate HTML for continent summary using server data
+            const continentItems = Object.entries(continentControl).map(([continent, control]) => {
+                const controlClass = control.isFullyControlled ? 'continent-item' : 'continent-item';
+                const borderColor = control.isFullyControlled ? '#27ae60' : control.controlPercentage > 50 ? '#f39c12' : '#95a5a6';
+                
+                return `
+                    <div class="${controlClass}" style="border-left-color: ${borderColor};">
+                        <div class="continent-name">${continent}</div>
+                        <div class="continent-owner">
+                            ${control.controllingPlayer || 'Contested'}
+                        </div>
+                        <div style="font-size: 0.7em; color: #666; margin-top: 3px;">
+                            ${control.maxTerritories}/${control.totalTerritories} territories
+                        </div>
+                        ${control.isFullyControlled ? `<div class="continent-bonus">+${control.bonus}</div>` : ''}
+                    </div>
+                `;
+            }).join('');
+
+            return `
+                <div class="continent-summary">
+                    ${continentItems}
+                </div>
+            `;
+        }
+
+        // Enhanced decision history system with smart browsing
+        let decisionHistory = [];
+        let currentDecisionIndex = 0;
+        let isBrowsingMode = false;
+        let newDecisionAvailable = false;
+        let lastDecisionId = null;
+
+        async function updateLatestDecision() {
+            if (!currentGameId) return;
+
+            try {
+                const API_BASE = await getApiBase();
+                const decisions = await fetchJson(`${API_BASE}/games/${currentGameId}/agent-decisions?limit=15`);
+                
+                if (!decisions.decisions || decisions.decisions.length === 0) {
+                    document.getElementById('decision-content').innerHTML = '<div class="loading">No decisions yet...</div>';
+                    return;
+                }
+
+                const oldHistory = [...decisionHistory];
+                const oldDecisionId = lastDecisionId;
+                
+                // Store decisions for navigation
+                decisionHistory = decisions.decisions;
+                
+                // Check if there's a new decision
+                if (decisions.decisions.length > 0) {
+                    const latestDecisionId = decisions.decisions[0].id || decisions.decisions[0].decision_timestamp;
+                    if (oldDecisionId && latestDecisionId !== oldDecisionId) {
+                        newDecisionAvailable = true;
+                    }
+                    lastDecisionId = latestDecisionId;
+                }
+
+                // Smart index management
+                if (!isBrowsingMode || currentDecisionIndex >= decisionHistory.length) {
+                    // In live mode or invalid index - show latest
+                    currentDecisionIndex = 0;
+                    isBrowsingMode = false;
+                    newDecisionAvailable = false;
+                } else {
+                    // In browsing mode - try to preserve position
+                    // If the decision we were viewing still exists, keep showing it
+                    if (oldHistory.length > 0 && currentDecisionIndex < oldHistory.length) {
+                        const currentDecision = oldHistory[currentDecisionIndex];
+                        const currentId = currentDecision.id || currentDecision.decision_timestamp;
+                        
+                        // Find the same decision in the new history
+                        const newIndex = decisionHistory.findIndex(d => 
+                            (d.id || d.decision_timestamp) === currentId
+                        );
+                        
+                        if (newIndex >= 0) {
+                            currentDecisionIndex = newIndex;
+                        } else {
+                            // Decision no longer exists, move to closest valid position
+                            currentDecisionIndex = Math.min(currentDecisionIndex, decisionHistory.length - 1);
+                        }
+                    }
+                }
+
+                // Display the decision navigation interface
+                displayDecisionWithNavigation();
+
+            } catch (error) {
+                showError('decision-content', error.message);
+            }
+        }
+
+        function displayDecisionWithNavigation() {
+            if (decisionHistory.length === 0) {
+                document.getElementById('decision-content').innerHTML = '<div class="loading">No decisions available...</div>';
+                document.getElementById('decision-header-nav').style.display = 'none';
+                return;
+            }
+
+            const decision = decisionHistory[currentDecisionIndex];
+            const tools = decision.tools_used || [];
+            const toolsHtml = tools.map(tool => `<span class="tool-tag">${tool}</span>`).join('');
+            
+            // Update header navigation with browsing mode indicators
+            const headerNav = document.getElementById('decision-header-nav');
+            headerNav.style.display = 'flex';
+            headerNav.style.alignItems = 'center';
+            headerNav.style.gap = '15px';
+            headerNav.style.flexWrap = 'wrap';
+            
+            // Create mode indicator
+            const modeIndicator = currentDecisionIndex === 0 && !isBrowsingMode ? 
+                '<span style="background: #27ae60; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.75em; font-weight: bold;">🔴 LIVE</span>' :
+                '<span style="background: #f39c12; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.75em; font-weight: bold;">📜 BROWSE</span>';
+            
+            // Create new decision notification
+            const newDecisionNotification = newDecisionAvailable && isBrowsingMode ?
+                '<span style="background: #e74c3c; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.75em; font-weight: bold; animation: pulse 2s infinite;">🆕 NEW</span>' : '';
+            
+            // Create Go Live button for browsing mode
+            const goLiveButton = (currentDecisionIndex > 0 || isBrowsingMode) ?
+                '<button class="decision-nav-btn" onclick="goLiveMode()" style="background: linear-gradient(45deg, #27ae60, #2ecc71); font-weight: bold;">📡 Go Live</button>' : '';
+            
+            headerNav.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <div class="decision-counter" style="font-size: 0.9em; color: #666; font-weight: 500;">
+                        Decision ${currentDecisionIndex + 1} of ${decisionHistory.length}
+                    </div>
+                    ${modeIndicator}
+                    ${newDecisionNotification}
+                </div>
+                <div class="decision-nav-buttons" style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <button class="decision-nav-btn" onclick="navigateDecision('prev')" ${currentDecisionIndex >= decisionHistory.length - 1 ? 'disabled' : ''}>
+                        ← Previous
+                    </button>
+                    <button class="decision-nav-btn" onclick="navigateDecision('next')" ${currentDecisionIndex <= 0 ? 'disabled' : ''}>
+                        Next →
+                    </button>
+                    ${goLiveButton}
+                </div>
+            `;
+            
+            // Clean up reasoning display - remove <think> blocks and format nicely
+            let displayReasoning = 'No reasoning available';
+            let isLongReasoning = false;
+            let fullReasoning = '';
+            
+            if (decision.agent_reasoning && decision.agent_reasoning.trim() !== '') {
+                let reasoning = decision.agent_reasoning;
+                
+                // Remove <think> blocks
+                reasoning = reasoning.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+                
+                // If there's content after removing think blocks, use it
+                if (reasoning) {
+                    // Store full reasoning for expand functionality
+                    fullReasoning = reasoning
+                        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                        .replace(/\n\n/g, '<br><br>')
+                        .replace(/\n/g, '<br>');
+                    
+                    // Check if reasoning is long
+                    if (reasoning.length > 3000) {
+                        isLongReasoning = true;
+                        // Show first 3000 characters as preview
+                        displayReasoning = reasoning.substring(0, 3000)
+                            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                            .replace(/\n\n/g, '<br><br>')
+                            .replace(/\n/g, '<br>') + '...';
+                    } else {
+                        displayReasoning = fullReasoning;
+                    }
+                } else {
+                    displayReasoning = 'Decision in progress...';
+                }
+            } else if (decision.success === 0) {
+                displayReasoning = 'Decision failed or incomplete';
+            }
+            
+            // Get current game state for context (only show for latest decision)
+            let currentTurnInfo = '';
+            if (currentDecisionIndex === 0) {
+                try {
+                    // We can get the current game info from the stored data
+                    currentTurnInfo = `
+                        <div style="background: #e8f5e8; padding: 12px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #27ae60;">
+                            <strong>🎮 Latest Decision</strong> - Turn ${decision.turn_number}<br>
+                            <strong>📊 Showing:</strong> Most recent agent decision
+                        </div>
+                    `;
+                } catch (e) {
+                    // Ignore errors getting current turn info
+                }
+            } else {
+                currentTurnInfo = `
+                    <div style="background: #fff3cd; padding: 12px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #f39c12;">
+                        <strong>📜 Historical Decision</strong> - Turn ${decision.turn_number}<br>
+                        <strong>🔍 Viewing:</strong> Past agent decision
+                    </div>
+                `;
+            }
+            
+            const content = `
+                <div class="decision-history-container">
+                    ${currentTurnInfo}
+                    <div class="decision-box decision-item">
+                        <div class="decision-meta">
+                            <span><strong>🤖 ${decision.player_name}</strong> - Turn ${decision.turn_number}</span>
+                            <span>⏰ ${formatDateTime(decision.decision_timestamp)}</span>
+                        </div>
+                        <div class="decision-reasoning" style="line-height: 1.6;" id="decision-reasoning-${decision.id || currentDecisionIndex}">
+                            ${displayReasoning}
+                        </div>
+                        ${isLongReasoning ? `
+                            <button class="expand-button" onclick="toggleDecisionReasoning('${decision.id || currentDecisionIndex}', this)" style="margin-top: 10px;">
+                                📖 Show Full Reasoning
+                            </button>
+                            <div id="full-reasoning-${decision.id || currentDecisionIndex}" class="expanded-section" style="display: none;">
+                                <div class="decision-reasoning" style="line-height: 1.6; background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #3498db;">
+                                    ${fullReasoning}
+                                </div>
+                            </div>
+                        ` : ''}
+                        ${tools.length > 0 ? `
+                            <div style="margin-top: 15px;">
+                                <strong>🔧 Tools Used:</strong><br>
+                                <div class="tools-used">${toolsHtml}</div>
+                            </div>
+                        ` : ''}
+                        <div style="margin-top: 15px; padding-top: 10px; border-top: 1px solid #eee; font-size: 0.9em; color: #666; display: flex; justify-content: space-between; align-items: center;">
+                            <span>⏱️ <strong>Decision Time:</strong> ${decision.decision_time_seconds ? decision.decision_time_seconds.toFixed(1) : 'N/A'}s</span>
+                            <span>${decision.success ? '✅ <strong>Success</strong>' : '❌ <strong>Failed</strong>'}</span>
+                        </div>
+                        ${decision.error_message ? `
+                            <div style="margin-top: 10px; padding: 8px; background: #ffe6e6; border-radius: 5px; color: #d63031; font-size: 0.9em;">
+                                ❗ <strong>Error:</strong> ${decision.error_message}
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('decision-content').innerHTML = content;
+        }
+
+        function navigateDecision(direction) {
+            if (direction === 'next' && currentDecisionIndex > 0) {
+                currentDecisionIndex--;
+                isBrowsingMode = true;
+            } else if (direction === 'prev' && currentDecisionIndex < decisionHistory.length - 1) {
+                currentDecisionIndex++;
+                isBrowsingMode = true;
+            }
+            
+            displayDecisionWithNavigation();
+        }
+
+        // Go to live mode - show latest decision
+        function goLiveMode() {
+            currentDecisionIndex = 0;
+            isBrowsingMode = false;
+            newDecisionAvailable = false;
+            displayDecisionWithNavigation();
+        }
+
+        // Add keyboard navigation support
+        document.addEventListener('keydown', function(event) {
+            // Only handle keyboard navigation when decision section is visible
+            if (decisionHistory.length === 0) return;
+            
+            // Arrow keys for navigation
+            if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+                event.preventDefault();
+                navigateDecision('prev');
+            } else if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+                event.preventDefault();
+                navigateDecision('next');
+            } else if (event.key === 'Home') {
+                // Home key - go to latest decision
+                event.preventDefault();
+                goLiveMode();
+            } else if (event.key === 'End') {
+                // End key - go to oldest decision
+                event.preventDefault();
+                currentDecisionIndex = decisionHistory.length - 1;
+                isBrowsingMode = true;
+                displayDecisionWithNavigation();
+            }
+        });
+
+        async function updateMessages() {
+            if (!currentGameId) return;
+
+            try {
+                const API_BASE = await getApiBase();
+                // We need to get messages for each player and combine them
+                const games = await fetchJson(`${API_BASE}/games`);
+                const currentGame = games.games && games.games.find(g => g.game_id === currentGameId);
+                
+                if (!currentGame) {
+                    document.getElementById('messages-content').innerHTML = '<div class="loading">Game not found</div>';
+                    return;
+                }
+
+                // Handle both array and object formats for players
+                let players = [];
+                if (currentGame.players) {
+                    if (Array.isArray(currentGame.players)) {
+                        players = currentGame.players;
+                    } else if (typeof currentGame.players === 'object') {
+                        players = Object.values(currentGame.players);
+                    }
+                }
+                
+                if (players.length === 0) {
+                    document.getElementById('messages-content').innerHTML = '<div class="loading">No players found</div>';
+                    return;
+                }
+
+                let allMessages = [];
+                
+                // Get messages for each player
+                for (const player of players) {
+                    if (!player.player_id) continue;
+                    
+                    try {
+                        const messages = await fetchJson(`${API_BASE}/games/${currentGameId}/messages?player_id=${player.player_id}`);
+                        if (messages.messages) {
+                            allMessages.push(...messages.messages.map(msg => ({
+                                ...msg,
+                                to_player: player.name || 'Unknown Player'
+                            })));
+                        }
+                    } catch (error) {
+                        console.error(`Error fetching messages for ${player.name || 'Unknown Player'}:`, error);
+                    }
+                }
+
+                // Advanced deduplication logic for broadcast messages
+                const processedMessages = [];
+                const broadcastGroups = new Map();
+
+                for (const msg of allMessages) {
+                    const msgKey = `${msg.from_player_name}-${msg.timestamp}-${msg.content}`;
+                    
+                    if (!broadcastGroups.has(msgKey)) {
+                        broadcastGroups.set(msgKey, {
+                            ...msg,
+                            recipients: [msg.to_player]
+                        });
+                    } else {
+                        const existingMsg = broadcastGroups.get(msgKey);
+                        if (!existingMsg.recipients.includes(msg.to_player)) {
+                            existingMsg.recipients.push(msg.to_player);
+                        }
+                    }
+                }
+
+                // Convert to array and identify broadcasts
+                for (const [key, msg] of broadcastGroups) {
+                    const isBroadcast = msg.recipients.length > 1;
+                    processedMessages.push({
+                        ...msg,
+                        is_broadcast: isBroadcast
+                    });
+                }
+
+                // Sort by timestamp (most recent first)
+                processedMessages.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                
+                // Take the 5 most recent messages
+                const recentMessages = processedMessages.slice(0, 5);
+
+                if (recentMessages.length === 0) {
+                    document.getElementById('messages-content').innerHTML = '<div class="loading">No messages yet...</div>';
+                    return;
+                }
+
+                const messagesHtml = recentMessages.map(msg => {
+                    const recipientDisplay = msg.is_broadcast ? 
+                        `📢 BROADCAST (${msg.recipients.length} recipients)` : 
+                        msg.recipients[0];
+                    
+                    const messageClass = msg.is_broadcast ? 'message-item broadcast-message' : 'message-item';
+                    const borderColor = msg.is_broadcast ? '#e74c3c' : '#f39c12';
+                    
+                    return `
+                        <div class="${messageClass}" style="border-left-color: ${borderColor}">
+                            <div class="message-header">
+                                <span class="message-from">${msg.from_player_name || 'Unknown'} → ${recipientDisplay}</span>
+                                <span class="message-time">${formatDateTime(msg.timestamp)}</span>
+                            </div>
+                            <div class="message-content">${msg.content || 'No content'}</div>
+                        </div>
+                    `;
+                }).join('');
+
+                document.getElementById('messages-content').innerHTML = messagesHtml;
+            } catch (error) {
+                console.error('updateMessages error:', error);
+                showError('messages-content', error.message);
+            }
+        }
+
+        async function updateStrategies() {
+            if (!currentGameId) return;
+
+            try {
+                const API_BASE = await getApiBase();
+                const games = await fetchJson(`${API_BASE}/games`);
+                const currentGame = games.games && games.games.find(g => g.game_id === currentGameId);
+                
+                if (!currentGame) {
+                    showError('strategies-content', 'Game not found');
+                    return;
+                }
+
+                // Handle both array and object formats for players
+                let players = [];
+                if (currentGame.players) {
+                    if (Array.isArray(currentGame.players)) {
+                        players = currentGame.players;
+                    } else if (typeof currentGame.players === 'object') {
+                        players = Object.values(currentGame.players);
+                    }
+                }
+                
+                if (players.length === 0) {
+                    showError('strategies-content', 'No players found');
+                    return;
+                }
+
+                let strategiesHtml = '<div class="strategy-container">';
+                
+                // Get strategies for each player
+                for (const player of players) {
+                    if (!player.player_id) continue;
+                    
+                    try {
+                        const strategies = await fetchJson(`${API_BASE}/games/${currentGameId}/player/${player.player_id}/strategies`);
+                        
+                        const shortTerm = strategies.short_term_strategy || 'No strategy set';
+                        const longTerm = strategies.long_term_strategy || 'No strategy set';
+                        
+                        // Get timestamps if available
+                        const dbStrategies = strategies.database_strategies || {};
+                        const shortTermUpdated = dbStrategies.short_term?.updated_at || 'Unknown';
+                        const longTermUpdated = dbStrategies.long_term?.updated_at || 'Unknown';
+                        
+                        strategiesHtml += `
+                            <div class="strategy-player">
+                                <div class="strategy-player-name">${player.name || 'Unknown Player'}</div>
+                                
+                                <div class="strategy-item">
+                                    <div class="strategy-label">Short-term Strategy</div>
+                                    <div class="strategy-content ${shortTerm === 'No strategy set' ? 'empty' : ''}">
+                                        ${shortTerm}
+                                    </div>
+                                    <div class="strategy-timestamp">Updated: ${formatDateTime(shortTermUpdated)}</div>
+                                </div>
+                                
+                                <div class="strategy-item">
+                                    <div class="strategy-label">Long-term Strategy</div>
+                                    <div class="strategy-content ${longTerm === 'No strategy set' ? 'empty' : ''}">
+                                        ${longTerm}
+                                    </div>
+                                    <div class="strategy-timestamp">Updated: ${formatDateTime(longTermUpdated)}</div>
+                                </div>
+                            </div>
+                        `;
+                    } catch (error) {
+                        console.error(`Error fetching strategies for ${player.name || 'Unknown Player'}:`, error);
+                        strategiesHtml += `
+                            <div class="strategy-player">
+                                <div class="strategy-player-name">${player.name || 'Unknown Player'}</div>
+                                <div class="strategy-content empty">Error loading strategies</div>
+                            </div>
+                        `;
+                    }
+                }
+                
+                strategiesHtml += '</div>';
+                document.getElementById('strategies-content').innerHTML = strategiesHtml;
+                
+            } catch (error) {
+                console.error('updateStrategies error:', error);
+                showError('strategies-content', error.message);
+            }
+        }
+
+        // Toggle expandable sections
+        function toggleSection(sectionId) {
+            const section = document.getElementById(sectionId);
+            const button = event.target;
+            
+            if (section.classList.contains('visible')) {
+                section.classList.remove('visible');
+                button.innerHTML = button.innerHTML.replace('Hide', 'View');
+            } else {
+                section.classList.add('visible');
+                button.innerHTML = button.innerHTML.replace('View', 'Hide');
+                
+                // Load data when expanding
+                if (sectionId === 'full-messages') {
+                    loadFullMessageHistory();
+                } else if (sectionId === 'activity-log') {
+                    loadActivityLog();
+                }
+            }
+        }
+
+        // Toggle decision reasoning expand/collapse
+        function toggleDecisionReasoning(decisionId, button) {
+            const fullReasoningSection = document.getElementById(`full-reasoning-${decisionId}`);
+            const previewSection = document.getElementById(`decision-reasoning-${decisionId}`);
+            
+            if (fullReasoningSection.style.display === 'none') {
+                // Expand - show full reasoning, hide preview
+                fullReasoningSection.style.display = 'block';
+                previewSection.style.display = 'none';
+                button.innerHTML = '📖 Show Less';
+                button.style.background = 'linear-gradient(45deg, #e74c3c, #c0392b)';
+            } else {
+                // Collapse - show preview, hide full reasoning
+                fullReasoningSection.style.display = 'none';
+                previewSection.style.display = 'block';
+                button.innerHTML = '📖 Show Full Reasoning';
+                button.style.background = 'linear-gradient(45deg, #3498db, #2980b9)';
+            }
+        }
+
+        async function loadFullMessageHistory() {
+            if (!currentGameId) return;
+            
+            try {
+                const API_BASE = await getApiBase();
+                const games = await fetchJson(`${API_BASE}/games`);
+                const currentGame = games.games && games.games.find(g => g.game_id === currentGameId);
+                
+                if (!currentGame) {
+                    document.getElementById('full-messages-log').innerHTML = '<div class="error">Game not found</div>';
+                    return;
+                }
+
+                // Handle both array and object formats for players
+                let players = [];
+                if (currentGame.players) {
+                    if (Array.isArray(currentGame.players)) {
+                        players = currentGame.players;
+                    } else if (typeof currentGame.players === 'object') {
+                        players = Object.values(currentGame.players);
+                    }
+                }
+                
+                if (players.length === 0) {
+                    document.getElementById('full-messages-log').innerHTML = '<div class="error">No players found</div>';
+                    return;
+                }
+
+                let allMessages = [];
+                
+                // Get messages for each player
+                for (const player of players) {
+                    if (!player.player_id) continue;
+                    
+                    try {
+                        const messages = await fetchJson(`${API_BASE}/games/${currentGameId}/messages?player_id=${player.player_id}`);
+                        if (messages.messages) {
+                            allMessages.push(...messages.messages.map(msg => ({
+                                ...msg,
+                                to_player: player.name || 'Unknown Player'
+                            })));
+                        }
+                    } catch (error) {
+                        console.error(`Error fetching messages for ${player.name || 'Unknown Player'}:`, error);
+                    }
+                }
+
+                // Advanced deduplication logic for broadcast messages (same as updateMessages)
+                const processedMessages = [];
+                const broadcastGroups = new Map();
+
+                for (const msg of allMessages) {
+                    const msgKey = `${msg.from_player_name}-${msg.timestamp}-${msg.content}`;
+                    
+                    if (!broadcastGroups.has(msgKey)) {
+                        broadcastGroups.set(msgKey, {
+                            ...msg,
+                            recipients: [msg.to_player]
+                        });
+                    } else {
+                        const existingMsg = broadcastGroups.get(msgKey);
+                        if (!existingMsg.recipients.includes(msg.to_player)) {
+                            existingMsg.recipients.push(msg.to_player);
+                        }
+                    }
+                }
+
+                // Convert to array and identify broadcasts
+                for (const [key, msg] of broadcastGroups) {
+                    const isBroadcast = msg.recipients.length > 1;
+                    processedMessages.push({
+                        ...msg,
+                        is_broadcast: isBroadcast
+                    });
+                }
+
+                // Sort by timestamp (most recent first)
+                processedMessages.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+                if (processedMessages.length === 0) {
+                    document.getElementById('full-messages-log').innerHTML = '<div class="log-entry">No messages found</div>';
+                    return;
+                }
+
+                const messagesHtml = processedMessages.map(msg => {
+                    const recipientDisplay = msg.is_broadcast ? 
+                        `📢 BROADCAST (${msg.recipients.length} recipients)` : 
+                        msg.recipients[0];
+                    
+                    return `
+                        <div class="log-entry">
+                            <span class="log-timestamp">${formatDateTime(msg.timestamp)}</span>
+                            <span class="log-type-message">MESSAGE</span>
+                            <strong>${msg.from_player_name || 'Unknown'} → ${recipientDisplay}:</strong>
+                            ${msg.content || 'No content'}
+                        </div>
+                    `;
+                }).join('');
+
+                document.getElementById('full-messages-log').innerHTML = messagesHtml;
+            } catch (error) {
+                console.error('loadFullMessageHistory error:', error);
+                document.getElementById('full-messages-log').innerHTML = '<div class="error">Error loading message history</div>';
+            }
+        }
+
+        // Message deduplication and filtering
+        let lastFailureMessages = new Map(); // Track last failure message per player/action
+        let failureMessageCounts = new Map(); // Track consecutive failure counts
+        
+        function formatActionData(actionType, actionData, actionResult) {
+            try {
+                const data = typeof actionData === 'string' ? JSON.parse(actionData) : actionData;
+                const result = typeof actionResult === 'string' ? JSON.parse(actionResult) : actionResult;
+                
+                // Check if this is a failure that should be deduplicated
+                if (result && result.success === false) {
+                    const playerKey = `${data.player_name || 'Unknown'}_${actionType}`;
+                    const errorMessage = result.message || 'Unknown error';
+                    
+                    // Check if this is the same failure as before
+                    if (lastFailureMessages.get(playerKey) === errorMessage) {
+                        const count = (failureMessageCounts.get(playerKey) || 0) + 1;
+                        failureMessageCounts.set(playerKey, count);
+                        
+                        // Return collapsed message for repeated failures
+                        if (count > 1) {
+                            return `🔄 <strong>REPEATED FAILURE</strong> (${count}x): ${errorMessage} <span style="color: #e74c3c; font-size: 0.8em;">[Click to expand details]</span>`;
+                        }
+                    } else {
+                        // New failure type, reset counter
+                        lastFailureMessages.set(playerKey, errorMessage);
+                        failureMessageCounts.set(playerKey, 1);
+                    }
+                } else if (result && result.success === true) {
+                    // Success - clear any failure tracking
+                    const playerKey = `${data.player_name || 'Unknown'}_${actionType}`;
+                    lastFailureMessages.delete(playerKey);
+                    failureMessageCounts.delete(playerKey);
+                }
+                
+                switch (actionType) {
+                    case 'place_armies':
+                        const territory = data.territory || data.territory_name || 'Unknown Territory';
+                        const armyCount = data.army_count || data.armies || data.count || '?';
+                        return `🛡️ Placed <strong>${armyCount}</strong> armies in <strong>${territory}</strong>`;
+                    
+                    case 'attack_territory':
+                        // Use the correct field names from the action tracker
+                        const attacker = data.from_territory || data.attacker_territory || data.attacking_territory || data.source_territory || 'Unknown';
+                        const target = data.to_territory || data.target_territory || data.defending_territory || 'Unknown';
+                        const success = result && result.success;
+                        
+                        // Enhanced combat result display
+                        const combatResult = result && result.combat_result;
+                        if (combatResult && combatResult.attacker_dice && combatResult.defender_dice) {
+                            const attackerDice = combatResult.attacker_dice.join(', ');
+                            const defenderDice = combatResult.defender_dice.join(', ');
+                            const attackerLosses = combatResult.attacker_losses || 0;
+                            const defenderLosses = combatResult.defender_losses || 0;
+                            const conquered = combatResult.territory_conquered ? ' 🏆 <strong>CONQUERED!</strong>' : ' 🛡️ <strong>DEFENDED</strong>';
+                            
+                            return `⚔️ <strong>${attacker}</strong> attacked <strong>${target}</strong><br>
+                                    🎲 Attacker: [${attackerDice}] vs Defender: [${defenderDice}]<br>
+                                    💀 Casualties: Attacker -${attackerLosses}, Defender -${defenderLosses}${conquered}`;
+                        }
+                        
+                        return `⚔️ Attacked <strong>${target}</strong> from <strong>${attacker}</strong> ${success ? '✅' : '❌'}`;
+                    
+                    case 'fortify_territory':
+                        const fortifySource = data.source_territory || data.from_territory || 'Unknown';
+                        const fortifyTarget = data.target_territory || data.to_territory || 'Unknown';
+                        const fortifyArmies = data.army_count || data.armies || '?';
+                        return `🏰 Fortified <strong>${fortifyTarget}</strong> from <strong>${fortifySource}</strong> with <strong>${fortifyArmies}</strong> armies`;
+                    
+                    case 'end_turn':
+                        // Special handling for end_turn failures
+                        if (result && result.success === false) {
+                            const errorMsg = result.message || 'Unknown error';
+                            if (errorMsg.includes('Must place all reinforcement armies')) {
+                                return `❌ <strong>TURN END BLOCKED</strong>: Must place remaining armies first`;
+                            }
+                            return `❌ <strong>TURN END FAILED</strong>: ${errorMsg}`;
+                        }
+                        return `⏭️ Ended turn`;
+                    
+                    case 'send_message':
+                        // Use the correct field names from the action tracker
+                        const recipient = data.to_player_name || data.target_player || data.player_name || 'Unknown Player';
+                        const message = data.message || data.content || '';
+                        
+                        // Handle backward compatibility for data that only has message_length
+                        if (!message && data.message_length) {
+                            return `💬 Sent message to <strong>${recipient}</strong>: (${data.message_length} characters)`;
+                        }
+                        
+                        // Handle empty message case
+                        if (!message) {
+                            return `💬 Sent message to <strong>${recipient}</strong>: (no content)`;
+                        }
+                        
+                        return `💬 Sent message to <strong>${recipient}</strong>: "${message.substring(0, 50)}${message.length > 50 ? '...' : ''}"`;
+                    
+                    case 'update_short_term_strategy':
+                        const shortStrategy = data.strategy || data.strategy_content || '';
+                        return `🎯 Updated short-term strategy: "${shortStrategy.substring(0, 80)}${shortStrategy.length > 80 ? '...' : ''}"`;
+                    
+                    case 'update_long_term_strategy':
+                        const longStrategy = data.strategy || data.strategy_content || '';
+                        return `🎯 Updated long-term strategy: "${longStrategy.substring(0, 80)}${longStrategy.length > 80 ? '...' : ''}"`;
+                    
+                    case 'get_game_status':
+                        return `📊 Checked game status`;
+                    
+                    case 'get_player_status':
+                        return `👤 Checked player status`;
+                    
+                    case 'get_board_state':
+                        return `🗺️ Checked board state`;
+                    
+                    case 'get_territory_info':
+                        const territoryName = data.territory || data.territory_name || 'Unknown';
+                        return `🏰 Checked territory info for <strong>${territoryName}</strong>`;
+                    
+                    case 'get_player_territories':
+                        return `📍 Checked player territories`;
+                    
+                    case 'get_messages':
+                        return `📬 Checked messages`;
+                    
+                    case 'get_continent_bonus':
+                        const continent = data.continent || data.continent_name || 'Unknown';
+                        return `🌍 Checked continent bonus for <strong>${continent}</strong>`;
+                    
+                    default:
+                        // Fallback for unknown action types with better error handling
+                        const dataStr = JSON.stringify(data);
+                        return `🔧 <strong>${actionType}</strong>: ${dataStr.length > 100 ? dataStr.substring(0, 100) + '...' : dataStr}`;
+                }
+            } catch (e) {
+                console.error('Error formatting action data:', e, 'actionType:', actionType, 'actionData:', actionData);
+                return `🔧 <strong>${actionType}</strong>: ${JSON.stringify(actionData)}`;
+            }
+        }
+
+        async function loadActivityLog() {
+            if (!currentGameId) return;
+            
+            try {
+                const API_BASE = await getApiBase();
+                // Get game actions and agent decisions
+                const [actions, decisions] = await Promise.all([
+                    fetchJson(`${API_BASE}/games/${currentGameId}/actions?limit=100`),
+                    fetchJson(`${API_BASE}/games/${currentGameId}/agent-decisions?limit=50`)
+                ]);
+
+                let logEntries = [];
+
+                // Add game actions with better formatting
+                if (actions.actions) {
+                    actions.actions.forEach(action => {
+                        const formattedAction = formatActionData(action.action_type, action.action_data, action.action_result);
+                        
+                        logEntries.push({
+                            timestamp: action.timestamp,
+                            type: 'action',
+                            content: `${formattedAction} <span style="color: #666;">(Turn ${action.turn_number})</span>`
+                        });
+                    });
+                }
+
+                // Add agent decisions with cleaner formatting
+                if (decisions.decisions) {
+                    decisions.decisions.forEach(decision => {
+                        const tools = decision.tools_used || [];
+                        const toolsText = tools.length > 0 ? ` 🔧 ${tools.join(', ')}` : '';
+                        const timeText = decision.decision_time_seconds ? ` ⏱️ ${decision.decision_time_seconds.toFixed(1)}s` : '';
+                        const statusIcon = decision.success ? '✅' : '❌';
+                        
+                        // Extract a brief summary from reasoning - improved to show more context
+                        let reasoningSummary = 'No reasoning';
+                        if (decision.agent_reasoning) {
+                            let reasoning = decision.agent_reasoning.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+                            if (reasoning) {
+                                // Try to extract the first meaningful lines (increased from 120 to 200 characters)
+                                const lines = reasoning.split('\n').filter(line => line.trim());
+                                if (lines.length > 0) {
+                                    // Take first few lines up to 200 characters
+                                    let summary = '';
+                                    for (const line of lines) {
+                                        if (summary.length + line.length > 200) break;
+                                        summary += (summary ? ' ' : '') + line.trim();
+                                    }
+                                    reasoningSummary = summary || lines[0].substring(0, 200);
+                                    if (reasoning.length > 200) reasoningSummary += '...';
+                                }
+                            }
+                        }
+                        
+                        logEntries.push({
+                            timestamp: decision.decision_timestamp,
+                            type: 'decision',
+                            content: `🤖 <strong>${decision.player_name}</strong> made decision ${statusIcon}${timeText}${toolsText}<br><span style="color: #666; font-style: italic;">${reasoningSummary}</span> <span style="color: #999;">(Turn ${decision.turn_number})</span>`
+                        });
+                    });
+                }
+
+                // Sort by timestamp (most recent first)
+                logEntries.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+                if (logEntries.length === 0) {
+                    document.getElementById('activity-log-content').innerHTML = '<div class="log-entry">No activity found</div>';
+                    return;
+                }
+
+                const logHtml = logEntries.map(entry => `
+                    <div class="log-entry">
+                        <span class="log-timestamp">${formatDateTime(entry.timestamp)}</span>
+                        <span class="log-type-${entry.type}">${entry.type.toUpperCase()}</span>
+                        ${entry.content}
+                    </div>
+                `).join('');
+
+                document.getElementById('activity-log-content').innerHTML = logHtml;
+            } catch (error) {
+                console.error('loadActivityLog error:', error);
+                document.getElementById('activity-log-content').innerHTML = '<div class="error">Error loading activity log</div>';
+            }
+        }
+
+        // Risk Map functionality
+        async function updateRiskMap() {
+            if (!currentGameId) return;
+
+            try {
+                const API_BASE = await getApiBase();
+                // Get game data and board state
+                const games = await fetchJson(`${API_BASE}/games`);
+                const currentGame = games.games && games.games.find(g => g.game_id === currentGameId);
+                
+                if (!currentGame) {
+                    showError('risk-map-content', 'Game not found');
+                    return;
+                }
+
+                // Handle both array and object formats for players
+                let players = [];
+                if (currentGame.players) {
+                    if (Array.isArray(currentGame.players)) {
+                        players = currentGame.players;
+                    } else if (typeof currentGame.players === 'object') {
+                        players = Object.values(currentGame.players);
+                    }
+                }
+                
+                if (players.length === 0) {
+                    showError('risk-map-content', 'No players found');
+                    return;
+                }
+
+                // Get board data
+                const playerId = players[0]?.player_id;
+                if (!playerId) {
+                    showError('risk-map-content', 'Invalid player data');
+                    return;
+                }
+
+                const boardData = await fetchJson(`${API_BASE}/games/${currentGameId}/board?player_id=${playerId}`);
+                if (!boardData || !boardData.territories) {
+                    showError('risk-map-content', 'No board data available');
+                    return;
+                }
+
+                // Create simplified Risk map
+                createSimplifiedRiskMap(boardData.territories, players, currentGame.current_player);
+
+            } catch (error) {
+                console.error('updateRiskMap error:', error);
+                showError('risk-map-content', error.message);
+            }
+        }
+
+        // Territory adjacency data - loaded from server or fallback
+        let territoryAdjacencies = null;
+        let showConnections = false;
+        let hoveredTerritory = null;
+
+        async function loadTerritoryAdjacencies() {
+            if (!territoryAdjacencies) {
+                try {
+                    const territoryRef = await getTerritoryReference();
+                    if (territoryRef && territoryRef.territories) {
+                        territoryAdjacencies = {};
+                        Object.entries(territoryRef.territories).forEach(([name, data]) => {
+                            territoryAdjacencies[name] = data.adjacent || [];
+                        });
+                    }
+                } catch (error) {
+                    console.error('Failed to load territory adjacencies:', error);
+                    // Use fallback data
+                    territoryAdjacencies = {
+                        'Alaska': ['Northwest Territory', 'Alberta', 'Kamchatka'],
+                        'Northwest Territory': ['Alaska', 'Alberta', 'Ontario', 'Greenland'],
+                        'Alberta': ['Alaska', 'Northwest Territory', 'Ontario', 'Western United States'],
+                        'Ontario': ['Northwest Territory', 'Alberta', 'Western United States', 'Eastern United States', 'Quebec', 'Greenland'],
+                        'Western United States': ['Alberta', 'Ontario', 'Eastern United States', 'Central America'],
+                        'Eastern United States': ['Ontario', 'Western United States', 'Central America', 'Quebec'],
+                        'Quebec': ['Ontario', 'Eastern United States', 'Greenland'],
+                        'Central America': ['Western United States', 'Eastern United States', 'Venezuela'],
+                        'Greenland': ['Northwest Territory', 'Ontario', 'Quebec', 'Iceland'],
+                        'Venezuela': ['Central America', 'Brazil', 'Peru'],
+                        'Brazil': ['Venezuela', 'Peru', 'Argentina', 'North Africa'],
+                        'Peru': ['Venezuela', 'Brazil', 'Argentina'],
+                        'Argentina': ['Peru', 'Brazil'],
+                        'Iceland': ['Greenland', 'Great Britain', 'Scandinavia'],
+                        'Great Britain': ['Iceland', 'Scandinavia', 'Northern Europe', 'Western Europe'],
+                        'Scandinavia': ['Iceland', 'Great Britain', 'Northern Europe', 'Ukraine'],
+                        'Northern Europe': ['Great Britain', 'Scandinavia', 'Ukraine', 'Southern Europe', 'Western Europe'],
+                        'Western Europe': ['Great Britain', 'Northern Europe', 'Southern Europe', 'North Africa'],
+                        'Southern Europe': ['Northern Europe', 'Western Europe', 'Ukraine', 'North Africa', 'Egypt', 'Middle East'],
+                        'Ukraine': ['Scandinavia', 'Northern Europe', 'Southern Europe', 'Ural', 'Afghanistan', 'Middle East'],
+                        'North Africa': ['Brazil', 'Western Europe', 'Southern Europe', 'Egypt', 'East Africa', 'Congo'],
+                        'Egypt': ['Southern Europe', 'North Africa', 'East Africa', 'Middle East'],
+                        'East Africa': ['North Africa', 'Egypt', 'Congo', 'South Africa', 'Madagascar', 'Middle East'],
+                        'Congo': ['North Africa', 'East Africa', 'South Africa'],
+                        'South Africa': ['Congo', 'East Africa', 'Madagascar'],
+                        'Madagascar': ['East Africa', 'South Africa'],
+                        'Middle East': ['Southern Europe', 'Ukraine', 'Egypt', 'East Africa', 'Afghanistan', 'India'],
+                        'Afghanistan': ['Ukraine', 'Middle East', 'Ural', 'China', 'India'],
+                        'Ural': ['Ukraine', 'Afghanistan', 'Siberia', 'China'],
+                        'Siberia': ['Ural', 'China', 'Mongolia', 'Irkutsk', 'Yakutsk'],
+                        'China': ['Afghanistan', 'Ural', 'Siberia', 'Mongolia', 'Siam', 'India'],
+                        'Mongolia': ['Siberia', 'China', 'Irkutsk', 'Kamchatka', 'Japan'],
+                        'Irkutsk': ['Siberia', 'Mongolia', 'Yakutsk', 'Kamchatka'],
+                        'Yakutsk': ['Siberia', 'Irkutsk', 'Kamchatka'],
+                        'Kamchatka': ['Alaska', 'Mongolia', 'Irkutsk', 'Yakutsk', 'Japan'],
+                        'Japan': ['Mongolia', 'Kamchatka'],
+                        'India': ['Middle East', 'Afghanistan', 'China', 'Siam'],
+                        'Siam': ['China', 'India', 'Indonesia'],
+                        'Indonesia': ['Siam', 'New Guinea', 'Western Australia'],
+                        'New Guinea': ['Indonesia', 'Western Australia', 'Eastern Australia'],
+                        'Western Australia': ['Indonesia', 'New Guinea', 'Eastern Australia'],
+                        'Eastern Australia': ['New Guinea', 'Western Australia']
+                    };
+                }
+            }
+            return territoryAdjacencies;
+        }
+
+        async function createSimplifiedRiskMap(territories, players, currentPlayer) {
+            // Load territory adjacencies
+            await loadTerritoryAdjacencies();
+            
+            // Player colors
+            const playerColors = {
+                0: '#3498db', // Blue
+                1: '#e74c3c', // Red  
+                2: '#27ae60', // Green
+                3: '#f39c12', // Orange
+                4: '#9b59b6', // Purple
+                5: '#1abc9c'  // Teal
+            };
+
+            // Create player color mapping
+            const playerColorMap = {};
+            players.forEach((player, index) => {
+                playerColorMap[player.player_id] = playerColors[index] || '#95a5a6';
+            });
+
+            // More realistic territory shapes and positions
+            const territoryShapes = {
+                // North America - more geographic positioning
+                'Alaska': { 
+                    path: 'M20,80 L60,70 L70,90 L50,110 L25,105 Z', 
+                    labelX: 45, labelY: 90, continent: 'North America' 
+                },
+                'Northwest Territory': { 
+                    path: 'M70,50 L130,45 L140,75 L120,85 L75,80 Z', 
+                    labelX: 105, labelY: 65, continent: 'North America' 
+                },
+                'Greenland': { 
+                    path: 'M200,30 L240,25 L245,55 L220,65 L205,50 Z', 
+                    labelX: 222, labelY: 45, continent: 'North America' 
+                },
+                'Alberta': { 
+                    path: 'M75,80 L120,85 L125,110 L90,115 L80,95 Z', 
+                    labelX: 100, labelY: 97, continent: 'North America' 
+                },
+                'Ontario': { 
+                    path: 'M125,85 L165,80 L170,105 L140,115 L125,110 Z', 
+                    labelX: 147, labelY: 97, continent: 'North America' 
+                },
+                'Quebec': { 
+                    path: 'M170,80 L205,75 L210,100 L185,110 L170,105 Z', 
+                    labelX: 187, labelY: 92, continent: 'North America' 
+                },
+                'Western United States': { 
+                    path: 'M60,115 L110,120 L115,150 L70,155 L65,135 Z', 
+                    labelX: 87, labelY: 135, continent: 'North America' 
+                },
+                'Eastern United States': { 
+                    path: 'M115,115 L170,110 L175,140 L125,150 L115,130 Z', 
+                    labelX: 145, labelY: 130, continent: 'North America' 
+                },
+                'Central America': { 
+                    path: 'M85,155 L125,150 L130,175 L95,180 L90,165 Z', 
+                    labelX: 110, labelY: 165, continent: 'North America' 
+                },
+
+                // South America - more realistic shape
+                'Venezuela': { 
+                    path: 'M110,185 L140,180 L145,200 L120,205 L115,195 Z', 
+                    labelX: 127, labelY: 192, continent: 'South America' 
+                },
+                'Brazil': { 
+                    path: 'M120,205 L170,200 L180,250 L140,260 L125,230 Z', 
+                    labelX: 150, labelY: 230, continent: 'South America' 
+                },
+                'Peru': { 
+                    path: 'M90,210 L125,205 L130,245 L100,250 L95,225 Z', 
+                    labelX: 112, labelY: 227, continent: 'South America' 
+                },
+                'Argentina': { 
+                    path: 'M100,250 L140,245 L145,290 L110,295 L105,270 Z', 
+                    labelX: 122, labelY: 270, continent: 'South America' 
+                },
+
+                // Europe - island and peninsula shapes
+                'Iceland': { 
+                    path: 'M260,50 L285,45 L290,65 L270,70 L265,60 Z', 
+                    labelX: 277, labelY: 57, continent: 'Europe' 
+                },
+                'Scandinavia': { 
+                    path: 'M300,40 L340,35 L350,70 L320,75 L305,55 Z', 
+                    labelX: 325, labelY: 55, continent: 'Europe' 
+                },
+                'Great Britain': { 
+                    path: 'M270,75 L295,70 L300,95 L280,100 L275,85 Z', 
+                    labelX: 287, labelY: 85, continent: 'Europe' 
+                },
+                'Northern Europe': { 
+                    path: 'M305,75 L345,70 L350,95 L320,105 L310,90 Z', 
+                    labelX: 327, labelY: 87, continent: 'Europe' 
+                },
+                'Western Europe': { 
+                    path: 'M275,105 L315,100 L320,125 L285,130 L280,115 Z', 
+                    labelX: 297, labelY: 115, continent: 'Europe' 
+                },
+                'Southern Europe': { 
+                    path: 'M320,100 L360,95 L365,120 L330,130 L325,115 Z', 
+                    labelX: 342, labelY: 112, continent: 'Europe' 
+                },
+                'Ukraine': { 
+                    path: 'M350,70 L390,65 L395,95 L365,105 L355,85 Z', 
+                    labelX: 372, labelY: 85, continent: 'Europe' 
+                },
+
+                // Africa - more continental shape
+                'North Africa': { 
+                    path: 'M280,140 L340,135 L345,165 L290,170 L285,155 Z', 
+                    labelX: 312, labelY: 152, continent: 'Africa' 
+                },
+                'Egypt': { 
+                    path: 'M345,135 L375,130 L380,160 L355,165 L350,150 Z', 
+                    labelX: 362, labelY: 147, continent: 'Africa' 
+                },
+                'East Africa': { 
+                    path: 'M355,165 L385,160 L390,195 L365,200 L360,180 Z', 
+                    labelX: 372, labelY: 180, continent: 'Africa' 
+                },
+                'Congo': { 
+                    path: 'M290,170 L340,165 L345,200 L305,205 L295,185 Z', 
+                    labelX: 317, labelY: 185, continent: 'Africa' 
+                },
+                'South Africa': { 
+                    path: 'M305,205 L355,200 L360,235 L320,240 L310,220 Z', 
+                    labelX: 332, labelY: 220, continent: 'Africa' 
+                },
+                'Madagascar': { 
+                    path: 'M370,210 L385,205 L390,230 L375,235 L372,220 Z', 
+                    labelX: 381, labelY: 220, continent: 'Africa' 
+                },
+
+                // Asia - vast continental shapes
+                'Ural': { 
+                    path: 'M395,65 L425,60 L430,85 L405,90 L400,75 Z', 
+                    labelX: 412, labelY: 75, continent: 'Asia' 
+                },
+                'Siberia': { 
+                    path: 'M430,45 L480,40 L485,70 L440,75 L435,60 Z', 
+                    labelX: 457, labelY: 57, continent: 'Asia' 
+                },
+                'Yakutsk': { 
+                    path: 'M485,40 L525,35 L530,65 L495,70 L490,55 Z', 
+                    labelX: 512, labelY: 52, continent: 'Asia' 
+                },
+                'Kamchatka': { 
+                    path: 'M530,65 L560,60 L565,90 L540,95 L535,80 Z', 
+                    labelX: 547, labelY: 77, continent: 'Asia' 
+                },
+                'Irkutsk': { 
+                    path: 'M440,75 L480,70 L485,100 L450,105 L445,90 Z', 
+                    labelX: 462, labelY: 87, continent: 'Asia' 
+                },
+                'Mongolia': { 
+                    path: 'M450,105 L490,100 L495,130 L465,135 L455,120 Z', 
+                    labelX: 472, labelY: 117, continent: 'Asia' 
+                },
+                'China': { 
+                    path: 'M420,130 L470,125 L475,165 L435,170 L425,150 Z', 
+                    labelX: 447, labelY: 147, continent: 'Asia' 
+                },
+                'Afghanistan': { 
+                    path: 'M395,120 L425,115 L430,145 L405,150 L400,135 Z', 
+                    labelX: 412, labelY: 132, continent: 'Asia' 
+                },
+                'Middle East': { 
+                    path: 'M375,130 L405,125 L410,155 L385,160 L380,145 Z', 
+                    labelX: 392, labelY: 142, continent: 'Asia' 
+                },
+                'India': { 
+                    path: 'M405,150 L440,145 L450,185 L420,190 L410,170 Z', 
+                    labelX: 427, labelY: 167, continent: 'Asia' 
+                },
+                'Siam': { 
+                    path: 'M450,170 L475,165 L480,195 L460,200 L455,185 Z', 
+                    labelX: 467, labelY: 182, continent: 'Asia' 
+                },
+                'Japan': { 
+                    path: 'M495,130 L515,125 L520,155 L505,160 L500,145 Z', 
+                    labelX: 507, labelY: 142, continent: 'Asia' 
+                },
+
+                // Australia - island continent
+                'Indonesia': { 
+                    path: 'M460,200 L490,195 L495,220 L470,225 L465,212 Z', 
+                    labelX: 477, labelY: 210, continent: 'Australia' 
+                },
+                'New Guinea': { 
+                    path: 'M495,195 L520,190 L525,215 L505,220 L500,207 Z', 
+                    labelX: 512, labelY: 205, continent: 'Australia' 
+                },
+                'Western Australia': { 
+                    path: 'M460,225 L490,220 L495,250 L470,255 L465,240 Z', 
+                    labelX: 477, labelY: 237, continent: 'Australia' 
+                },
+                'Eastern Australia': { 
+                    path: 'M495,220 L525,215 L530,245 L505,250 L500,235 Z', 
+                    labelX: 512, labelY: 232, continent: 'Australia' 
+                }
+            };
+
+            const mapContainer = document.getElementById('risk-map-content');
+            mapContainer.innerHTML = `
+                <div class="risk-map-container">
+                    <svg class="risk-map-svg" id="risk-map-svg" viewBox="0 0 580 320"></svg>
+                </div>
+                <div id="map-tooltip" class="map-tooltip"></div>
+            `;
+
+            const svg = document.getElementById('risk-map-svg');
+            
+            // Add ocean background and continent landmasses
+            svg.innerHTML = `
+                <rect x="0" y="0" width="580" height="320" fill="#4a90e2" opacity="0.3"/>
+                <path d="M15,40 L250,30 L255,180 L130,190 L90,160 L15,170 Z" fill="#f5f5dc" opacity="0.4" class="continent-background"/>
+                <path d="M85,180 L180,175 L185,300 L95,305 Z" fill="#fff8dc" opacity="0.4" class="continent-background"/>
+                <path d="M255,35 L400,30 L405,135 L260,140 Z" fill="#f0fff0" opacity="0.4" class="continent-background"/>
+                <path d="M275,135 L395,130 L400,245 L280,250 Z" fill="#fffacd" opacity="0.4" class="continent-background"/>
+                <path d="M395,30 L570,25 L575,200 L400,205 Z" fill="#ffe4e1" opacity="0.4" class="continent-background"/>
+                <path d="M455,190 L535,185 L540,260 L460,265 Z" fill="#e6e6fa" opacity="0.4" class="continent-background"/>
+                <g id="connections-group"></g>
+                <g id="territories-group"></g>
+                <g id="labels-group"></g>
+                <g id="continent-labels-group">
+                    <text x="135" y="25" class="territory-label" style="font-size: 14px; font-weight: bold; fill: #2c3e50;">North America</text>
+                    <text x="135" y="170" class="territory-label" style="font-size: 14px; font-weight: bold; fill: #2c3e50;">South America</text>
+                    <text x="330" y="25" class="territory-label" style="font-size: 14px; font-weight: bold; fill: #2c3e50;">Europe</text>
+                    <text x="337" y="125" class="territory-label" style="font-size: 14px; font-weight: bold; fill: #2c3e50;">Africa</text>
+                    <text x="485" y="20" class="territory-label" style="font-size: 14px; font-weight: bold; fill: #2c3e50;">Asia</text>
+                    <text x="497" y="180" class="territory-label" style="font-size: 14px; font-weight: bold; fill: #2c3e50;">Australia</text>
+                </g>
+            `;
+
+            const territoriesGroup = document.getElementById('territories-group');
+            const labelsGroup = document.getElementById('labels-group');
+            const connectionsGroup = document.getElementById('connections-group');
+
+            // Add territory shapes and labels
+            Object.entries(territoryShapes).forEach(([territoryName, shape]) => {
+                const territory = territories[territoryName];
+                if (!territory) return;
+
+                const owner = players.find(p => p.player_id === territory.owner);
+                const color = owner ? playerColorMap[territory.owner] : '#bdc3c7';
+                const armyCount = territory.army_count || 0;
+                const isCurrentPlayer = owner && owner.name === currentPlayer;
+
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                path.setAttribute('d', shape.path);
+                path.setAttribute('fill', color);
+                path.setAttribute('class', `territory ${isCurrentPlayer ? 'current-player' : ''}`);
+                path.setAttribute('data-territory', territoryName);
+                path.setAttribute('data-owner', owner ? owner.name : 'Neutral');
+                path.setAttribute('data-armies', armyCount);
+                path.style.filter = 'drop-shadow(1px 1px 2px rgba(0,0,0,0.3))';
+                territoriesGroup.appendChild(path);
+
+                const armyLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                armyLabel.setAttribute('x', shape.labelX);
+                armyLabel.setAttribute('y', shape.labelY + 4);
+                armyLabel.setAttribute('class', 'army-count');
+                armyLabel.style.fontSize = '14px';
+                armyLabel.style.fontWeight = 'bold';
+                armyLabel.textContent = armyCount;
+                labelsGroup.appendChild(armyLabel);
+
+            });
+
+            // Add event listeners for tooltips and connections
+            svg.querySelectorAll('.territory').forEach(path => {
+                path.addEventListener('mouseover', (event) => {
+                    showMapTooltip(event);
+                });
+                path.addEventListener('mouseout', () => {
+                    hideMapTooltip();
+                });
+            });
+
+            // Initial connection draw
+            drawConnections(territoryShapes, null);
+        }
+
+        function drawConnections(territoryShapes, highlightedTerritory) {
+            const connectionsGroup = document.getElementById('connections-group');
+            connectionsGroup.innerHTML = '';
+
+            const drawnConnections = new Set();
+
+            Object.entries(territoryShapes).forEach(([from, fromShape]) => {
+                const adjacents = territoryAdjacencies[from] || [];
+                adjacents.forEach(to => {
+                    const toShape = territoryShapes[to];
+                    if (!toShape) return;
+
+                    const connectionId = [from, to].sort().join('-');
+                    if (drawnConnections.has(connectionId)) return;
+                    drawnConnections.add(connectionId);
+
+                    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    line.setAttribute('x1', fromShape.labelX);
+                    line.setAttribute('y1', fromShape.labelY);
+                    line.setAttribute('x2', toShape.labelX);
+                    line.setAttribute('y2', toShape.labelY);
+                    
+                    line.setAttribute('class', 'territory-connection');
+                    connectionsGroup.appendChild(line);
+                });
+            });
+        }
+
+        // Map tooltip functions
+        function showMapTooltip(event) {
+            const tooltip = document.getElementById('map-tooltip');
+            if (!tooltip) return;
+
+            const path = event.target;
+            const territory = path.dataset.territory;
+            const owner = path.dataset.owner;
+            const armies = path.dataset.armies;
+
+            let adjacents = territoryAdjacencies[territory] || [];
+            let adjacentsHtml = adjacents.length > 0 ? `<hr style="margin: 5px 0; border-color: #555;"><small>Connects to: ${adjacents.join(', ')}</small>` : '';
+
+            tooltip.innerHTML = `
+                <strong>${territory}</strong><br>
+                Owner: ${owner}<br>
+                Armies: ${armies}
+                ${adjacentsHtml}
+            `;
+
+            const svgRect = document.getElementById('risk-map-svg').getBoundingClientRect();
+            tooltip.style.left = (event.clientX - svgRect.left + 15) + 'px';
+            tooltip.style.top = (event.clientY - svgRect.top - 15) + 'px';
+            tooltip.classList.add('visible');
+        }
+
+        function hideMapTooltip() {
+            const tooltip = document.getElementById('map-tooltip');
+            if (tooltip) {
+                tooltip.classList.remove('visible');
+            }
+        }
+
+        // Action Effect Manager
+        const effectManager = {
+            activeEffects: new Map(),
+
+            applyEffect(territoryName, effectClass, duration = 2000) {
+                const territoryElement = document.querySelector(`.territory[data-territory="${territoryName}"]`);
+                if (!territoryElement) return;
+
+                // Remove any existing effect on this territory
+                this.removeEffect(territoryName);
+
+                territoryElement.classList.add(effectClass);
+
+                const timeoutId = setTimeout(() => {
+                    this.removeEffect(territoryName);
+                }, duration);
+
+                this.activeEffects.set(territoryName, { effectClass, timeoutId });
+            },
+
+            removeEffect(territoryName) {
+                const effect = this.activeEffects.get(territoryName);
+                if (effect) {
+                    const territoryElement = document.querySelector(`.territory[data-territory="${territoryName}"]`);
+                    if (territoryElement) {
+                        territoryElement.classList.remove(effect.effectClass);
+                    }
+                    clearTimeout(effect.timeoutId);
+                    this.activeEffects.delete(territoryName);
+                }
+            },
+
+            clearAllEffects() {
+                for (const territoryName of this.activeEffects.keys()) {
+                    this.removeEffect(territoryName);
+                }
+            }
+        };
+
+        async function updateAll() {
+            // First, find an active game if we don't have one
+            if (!currentGameId) {
+                currentGameId = await findActiveGame();
+                if (!currentGameId) {
+                    document.getElementById('game-status-content').innerHTML = '<div class="loading">No active games found. Start agents/simple_runner.py to begin!</div>';
+                    return;
+                }
+            }
+
+            // Update all sections
+            const [gameStatus, riskMap, players, strategies, latestDecision, messages] = await Promise.all([
+                updateGameStatus(),
+                updateRiskMap(),
+                updatePlayers(),
+                updateStrategies(),
+                updateLatestDecision(),
+                updateMessages()
+            ]);
+
+            // Trigger effects based on the latest action
+            if (latestDecision && latestDecision.decisions && latestDecision.decisions.length > 0) {
+                const lastAction = latestDecision.decisions[0];
+                handleActionEffect(lastAction);
+            }
+
+            // Update expanded sections if they're visible
+            if (document.getElementById('full-messages').classList.contains('visible')) {
+                loadFullMessageHistory();
+            }
+            if (document.getElementById('activity-log').classList.contains('visible')) {
+                loadActivityLog();
+            }
+
+            // Update last updated time
+            document.getElementById('last-updated').textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
+        }
+
+        // Activity Panel and Ticker functionality
+        let activityData = [];
+        let lastActivityUpdate = 0;
+
+        function toggleActivityPanel() {
+            const panel = document.getElementById('activity-panel');
+            const toggle = document.getElementById('activity-toggle');
+            
+            if (panel.classList.contains('open')) {
+                panel.classList.remove('open');
+                toggle.classList.remove('hidden');
+            } else {
+                panel.classList.add('open');
+                toggle.classList.add('hidden');
+                updateActivityPanel();
+            }
+        }
+
+        function handleActionEffect(action) {
+            if (!action || !action.tools_used || action.tools_used.length === 0) return;
+
+            const actionType = action.tools_used[0];
+            const actionData = action.action_data || {};
+
+            switch (actionType) {
+                case 'attack_territory':
+                    effectManager.applyEffect(actionData.from_territory, 'effect-attack', 3000);
+                    effectManager.applyEffect(actionData.to_territory, 'effect-attack', 3000);
+                    if (action.action_result && action.action_result.combat_result && action.action_result.combat_result.territory_conquered) {
+                        effectManager.applyEffect(actionData.to_territory, 'effect-conquered', 2000);
+                    }
+                    break;
+                case 'place_armies':
+                    effectManager.applyEffect(actionData.territory, 'effect-reinforce', 2500);
+                    break;
+                case 'fortify_territory':
+                    effectManager.applyEffect(actionData.source_territory, 'effect-fortify', 2000);
+                    effectManager.applyEffect(actionData.target_territory, 'effect-fortify', 2000);
+                    break;
+            }
+        }
+
+        async function updateActivityPanel() {
+            if (!currentGameId) return;
+            
+            try {
+                const API_BASE = await getApiBase();
+                // Get recent activity data
+                const [actions, decisions] = await Promise.all([
+                    fetchJson(`${API_BASE}/games/${currentGameId}/actions?limit=20`),
+                    fetchJson(`${API_BASE}/games/${currentGameId}/agent-decisions?limit=10`)
+                ]);
+
+                let activities = [];
+
+                // Process actions
+                if (actions.actions) {
+                    actions.actions.forEach(action => {
+                        const formattedAction = formatActionData(action.action_type, action.action_data, action.action_result);
+                        activities.push({
+                            timestamp: action.timestamp,
+                            type: 'action',
+                            content: formattedAction,
+                            player: action.player_name || 'System',
+                            turn: action.turn_number,
+                            action_type: action.action_type,
+                            action_data: action.action_data,
+                            action_result: action.action_result
+                        });
+                    });
+                }
+
+                // Process decisions
+                if (decisions.decisions) {
+                    decisions.decisions.forEach(decision => {
+                        const statusIcon = decision.success ? '✅' : '❌';
+                        const timeText = decision.decision_time_seconds ? ` (${decision.decision_time_seconds.toFixed(1)}s)` : '';
+                        
+                        activities.push({
+                            timestamp: decision.decision_timestamp,
+                            type: 'decision',
+                            content: `Made decision ${statusIcon}${timeText}`,
+                            player: decision.player_name,
+                            turn: decision.turn_number
+                        });
+                    });
+                }
+
+                // Sort by timestamp (most recent first)
+                activities.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+                // Update activity panel
+                const panelContent = document.getElementById('activity-panel-content');
+                if (activities.length === 0) {
+                    panelContent.innerHTML = '<div style="text-align: center; padding: 20px; color: #666;">No recent activity</div>';
+                } else {
+                    const activityHtml = activities.slice(0, 15).map((activity, index) => {
+                        const isNew = new Date(activity.timestamp).getTime() > lastActivityUpdate;
+                        return `
+                            <div class="activity-panel-item ${isNew ? 'new' : ''}">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                                    <strong>${activity.player}</strong>
+                                    <span style="font-size: 0.8em; color: #666;">${formatTime(activity.timestamp)}</span>
+                                </div>
+                                <div style="color: #666; font-size: 0.9em;">
+                                    ${activity.content}
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                    
+                    panelContent.innerHTML = activityHtml;
+                }
+
+                // Update ticker with latest activity
+                updateActivityTicker(activities.slice(0, 5));
+                
+                // Show toast for very recent activity and apply effects
+                const recentActivity = activities.filter(a => 
+                    new Date(a.timestamp).getTime() > lastActivityUpdate
+                );
+                
+                recentActivity.forEach(activity => {
+                    if (activity.type === 'action') {
+                        if (activity.content.includes('Attacked') || activity.content.includes('message')) {
+                            showToast(activity);
+                        }
+                        handleActionEffect({
+                            tools_used: [activity.action_type],
+                            action_data: activity.action_data,
+                            action_result: activity.action_result
+                        });
+                    }
+                });
+
+                lastActivityUpdate = Date.now();
+
+            } catch (error) {
+                console.error('Error updating activity panel:', error);
+            }
+        }
+
+        function updateActivityTicker(activities) {
+            const tickerContent = document.getElementById('ticker-content');
+            
+            if (activities.length === 0) {
+                tickerContent.innerHTML = '<div class="activity-ticker-item">No recent activity</div>';
+                return;
+            }
+
+            const tickerItems = activities.map(activity => 
+                `<div class="activity-ticker-item">${activity.player}: ${activity.content}</div>`
+            ).join('');
+            
+            tickerContent.innerHTML = tickerItems;
+        }
+
+        function showToast(activity) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            let toastClass = 'toast';
+            let toastDuration = 5000; // Default 5 seconds
+            
+            // Enhanced combat toast for attacks
+            if (activity.content.includes('attacked') && activity.content.includes('🎲')) {
+                toastClass += ' attack';
+                toastDuration = 8000; // Longer duration for combat results
+                
+                // Extract combat details for enhanced display
+                const combatMatch = activity.content.match(/🎲 Attacker: \[([^\]]+)\] vs Defender: \[([^\]]+)\]/);
+                const casualtyMatch = activity.content.match(/💀 Casualties: Attacker -(\d+), Defender -(\d+)/);
+                const resultMatch = activity.content.match(/(🏆 <strong>CONQUERED!<\/strong>|🛡️ <strong>DEFENDED<\/strong>)/);
+                
+                if (combatMatch && casualtyMatch) {
+                    const attackerDice = combatMatch[1];
+                    const defenderDice = combatMatch[2];
+                    const attackerLosses = casualtyMatch[1];
+                    const defenderLosses = casualtyMatch[2];
+                    const result = resultMatch ? resultMatch[1] : '';
+                    
+                    toast.innerHTML = `
+                        <div class="toast-content">
+                            <div style="font-weight: bold; color: #e74c3c; margin-bottom: 5px;">⚔️ BATTLE REPORT</div>
+                            <div style="font-size: 0.9em; margin-bottom: 3px;"><strong>${activity.player}</strong> launched attack!</div>
+                            <div style="font-size: 0.85em; margin: 3px 0;">🎲 [${attackerDice}] vs [${defenderDice}]</div>
+                            <div style="font-size: 0.85em; margin: 3px 0;">💀 Losses: -${attackerLosses} vs -${defenderLosses}</div>
+                            <div style="font-size: 0.9em; margin-top: 5px;">${result}</div>
+                        </div>
+                        <div class="toast-time">${formatTime(activity.timestamp)}</div>
+                    `;
+                } else {
+                    // Fallback for attacks without detailed combat data
+                    toast.innerHTML = `
+                        <div class="toast-content">
+                            <div style="font-weight: bold; color: #e74c3c;">⚔️ ATTACK</div>
+                            <strong>${activity.player}</strong><br>
+                            ${activity.content}
+                        </div>
+                        <div class="toast-time">${formatTime(activity.timestamp)}</div>
+                    `;
+                }
+            } else if (activity.content.includes('message')) {
+                toastClass += ' message';
+                toast.innerHTML = `
+                    <div class="toast-content">
+                        <div style="font-weight: bold; color: #f39c12;">💬 MESSAGE</div>
+                        <strong>${activity.player}</strong><br>
+                        ${activity.content}
+                    </div>
+                    <div class="toast-time">${formatTime(activity.timestamp)}</div>
+                `;
+            } else if (activity.type === 'decision') {
+                toastClass += ' decision';
+                toast.innerHTML = `
+                    <div class="toast-content">
+                        <div style="font-weight: bold; color: #9b59b6;">🤖 DECISION</div>
+                        <strong>${activity.player}</strong><br>
+                        ${activity.content}
+                    </div>
+                    <div class="toast-time">${formatTime(activity.timestamp)}</div>
+                `;
+            } else {
+                // Default toast
+                toast.innerHTML = `
+                    <div class="toast-content">
+                        <strong>${activity.player}</strong><br>
+                        ${activity.content}
+                    </div>
+                    <div class="toast-time">${formatTime(activity.timestamp)}</div>
+                `;
+            }
+            
+            toast.className = toastClass;
+            
+            // Add click to dismiss
+            toast.onclick = () => {
+                toast.style.transform = 'translateX(100%)';
+                setTimeout(() => container.removeChild(toast), 300);
+            };
+            
+            container.appendChild(toast);
+            
+            // Show toast
+            setTimeout(() => toast.classList.add('show'), 100);
+            
+            // Auto-dismiss after specified duration
+            setTimeout(() => {
+                if (container.contains(toast)) {
+                    toast.style.transform = 'translateX(100%)';
+                    setTimeout(() => {
+                        if (container.contains(toast)) {
+                            container.removeChild(toast);
+                        }
+                    }, 300);
+                }
+            }, toastDuration);
+        }
+
+        // Initialize the dashboard
+        async function init() {
+            console.log('Initializing Risk Dashboard...');
+            
+            // Add ticker padding to body
+            document.body.classList.add('with-ticker');
+            
+            await updateAll();
+            
+            // Set up auto-refresh every 5 seconds
+            updateInterval = setInterval(async () => {
+                await updateAll();
+                
+                // Update activity panel if it's open
+                if (document.getElementById('activity-panel').classList.contains('open')) {
+                    updateActivityPanel();
+                } else {
+                    // Still update ticker even if panel is closed
+                    updateActivityPanel();
+                }
+            }, 5000);
+            
+            // Initial activity panel update
+            setTimeout(updateActivityPanel, 1000);
+        }
+
+        // Game end screen function
+        function showGameEndScreen(gameStatus) {
+            // Stop auto-refresh
+            if (updateInterval) {
+                clearInterval(updateInterval);
+                updateInterval = null;
+            }
+            
+            // Get winner information
+            const winner = gameStatus.winner || 'Unknown';
+            const totalTurns = gameStatus.turn_number || 'Unknown';
+            
+            // Create game end overlay
+            const overlay = document.createElement('div');
+            overlay.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.8);
+                z-index: 10000;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                animation: fadeIn 0.5s ease;
+            `;
+            
+            overlay.innerHTML = `
+                <div style="
+                    background: white;
+                    border-radius: 20px;
+                    padding: 40px;
+                    text-align: center;
+                    max-width: 500px;
+                    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+                    animation: slideIn 0.5s ease;
+                ">
+                    <div style="font-size: 4em; margin-bottom: 20px;">🏆</div>
+                    <h1 style="color: #2c3e50; font-size: 2.5em; margin-bottom: 10px;">Game Over!</h1>
+                    <h2 style="color: #27ae60; font-size: 1.8em; margin-bottom: 20px;">🎉 ${winner} Wins! 🎉</h2>
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin: 20px 0;">
+                        <p style="color: #666; font-size: 1.1em; margin-bottom: 10px;">
+                            <strong>Total Turns:</strong> ${totalTurns}
+                        </p>
+                        <p style="color: #666; font-size: 1em;">
+                            Congratulations to <strong>${winner}</strong> for achieving world domination!
+                        </p>
+                    </div>
+                    <div style="margin-top: 30px;">
+                        <button onclick="startNewGame()" style="
+                            background: linear-gradient(45deg, #27ae60, #2ecc71);
+                            color: white;
+                            border: none;
+                            padding: 15px 30px;
+                            border-radius: 25px;
+                            font-size: 1.1em;
+                            font-weight: 600;
+                            cursor: pointer;
+                            margin-right: 15px;
+                            box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3);
+                            transition: transform 0.2s ease;
+                        " onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+                            🎲 Start New Game
+                        </button>
+                        <button onclick="viewGameSummary()" style="
+                            background: linear-gradient(45deg, #3498db, #2980b9);
+                            color: white;
+                            border: none;
+                            padding: 15px 30px;
+                            border-radius: 25px;
+                            font-size: 1.1em;
+                            font-weight: 600;
+                            cursor: pointer;
+                            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+                            transition: transform 0.2s ease;
+                        " onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+                            📊 View Game Summary
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            // Add CSS animations
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes fadeIn {
+                    from { opacity: 0; }
+                    to { opacity: 1; }
+                }
+                @keyframes slideIn {
+                    from { opacity: 0; transform: translateY(-50px) scale(0.9); }
+                    to { opacity: 1; transform: translateY(0) scale(1); }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            document.body.appendChild(overlay);
+        }
+        
+        // Start new game function
+        function startNewGame() {
+            // Clear current game ID
+            currentGameId = null;
+            localStorage.removeItem('risk_current_game_id');
+            
+            // Navigate to game setup
+            window.location.href = 'game_setup.html';
+        }
+        
+        // View game summary function
+        function viewGameSummary() {
+            // Remove the overlay and continue showing the dashboard in read-only mode
+            const overlay = document.querySelector('div[style*="position: fixed"]');
+            if (overlay) {
+                overlay.remove();
+            }
+            
+            // Update the header to show it's a completed game
+            const header = document.querySelector('.header h1');
+            if (header) {
+                header.innerHTML = '🏆 AI at Risk - Game Complete';
+            }
+            
+            // Add a "Start New Game" button to the header
+            const headerDiv = document.querySelector('.header');
+            if (headerDiv && !headerDiv.querySelector('.new-game-btn')) {
+                const newGameBtn = document.createElement('button');
+                newGameBtn.className = 'new-game-btn';
+                newGameBtn.onclick = startNewGame;
+                newGameBtn.style.cssText = `
+                    background: linear-gradient(45deg, #27ae60, #2ecc71);
+                    color: white;
+                    border: none;
+                    padding: 10px 20px;
+                    border-radius: 25px;
+                    cursor: pointer;
+                    font-size: 1em;
+                    font-weight: 600;
+                    margin-top: 15px;
+                    box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3);
+                    transition: transform 0.2s ease;
+                `;
+                newGameBtn.innerHTML = '🎲 Start New Game';
+                newGameBtn.onmouseover = () => newGameBtn.style.transform = 'translateY(-2px)';
+                newGameBtn.onmouseout = () => newGameBtn.style.transform = 'translateY(0)';
+                headerDiv.appendChild(newGameBtn);
+            }
+        }
+
+        // Mode switching function
+        function switchToBriefingMode() {
+            // Store current game ID in localStorage for briefing mode
+            if (currentGameId) {
+                localStorage.setItem('risk_current_game_id', currentGameId);
+            }
+            
+            // Navigate to briefing mode
+            window.location.href = 'risk_dashboard_briefing.html';
+        }
+
+        // Start the dashboard when page loads
+        document.addEventListener('DOMContentLoaded', init);
+
+        // Clean up on page unload
+        window.addEventListener('beforeunload', () => {
+            if (updateInterval) {
+                clearInterval(updateInterval);
+            }
+        });
+    </script>
+</body>
+</html>

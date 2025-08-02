@@ -1,0 +1,2693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI at Risk - Tournament Leaderboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-error-bars@4"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 95%;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .nav-links {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .nav-link {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            margin: 0 10px;
+            transition: all 0.3s;
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-link:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .content-area {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .refresh-info {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 10px;
+            background: #e3f2fd;
+            border-radius: 8px;
+            color: #1976d2;
+            font-size: 0.9rem;
+        }
+
+        .leaderboard-section {
+            margin-bottom: 40px;
+        }
+
+        .leaderboard-section h3 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .share-btn {
+            font-size: 0.9rem;
+            font-weight: normal;
+            background: #eee;
+            border: 1px solid #ccc;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 500px;
+            border-radius: 10px;
+        }
+
+        .close-btn {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .modal-content input {
+            width: 100%;
+            padding: 8px;
+            margin-top: 10px;
+            margin-bottom: 10px;
+        }
+
+        .leaderboard-subtitle {
+            color: #666;
+            margin-bottom: 20px;
+            font-style: italic;
+        }
+
+        .leaderboard-container {
+            background: white;
+            border-radius: 10px;
+            overflow-x: auto;
+            overflow-y: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .leaderboard-table {
+            width: 100%;
+            min-width: 800px;
+            border-collapse: collapse;
+            margin: 0;
+        }
+
+        .leaderboard-table th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 12px;
+            text-align: left;
+            font-weight: bold;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .leaderboard-table td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+            vertical-align: middle;
+        }
+
+        .leaderboard-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .leaderboard-table tr.top-player {
+            background: linear-gradient(90deg, #fff3cd 0%, #ffffff 100%);
+        }
+
+        .leaderboard-table tr.top-model {
+            background: linear-gradient(90deg, #d1ecf1 0%, #ffffff 100%);
+        }
+
+        .rank-cell {
+            font-weight: bold;
+            font-size: 1.1rem;
+            text-align: center;
+            width: 60px;
+        }
+
+        .player-name, .model-name {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .win-rate {
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        .success-rate {
+            color: #17a2b8;
+            font-weight: bold;
+        }
+
+        .models-cell {
+            font-size: 0.85rem;
+            color: #666;
+            max-width: 150px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* Sortable table styles */
+        .sortable-header {
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+            transition: background-color 0.2s;
+        }
+
+        .sortable-header:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .sortable-header::after {
+            content: ' ↕️';
+            font-size: 0.8em;
+            opacity: 0.6;
+            margin-left: 5px;
+        }
+
+        .sortable-header.sort-asc::after {
+            content: ' ↑';
+            color: #fff;
+            opacity: 1;
+        }
+
+        .sortable-header.sort-desc::after {
+            content: ' ↓';
+            color: #fff;
+            opacity: 1;
+        }
+
+        .games-summary {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+        }
+
+        .games-summary h4 {
+            margin: 0 0 5px 0;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .games-summary .total-count {
+            font-size: 2rem;
+            font-weight: bold;
+            margin: 5px 0;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+        }
+
+        .games-summary .subtitle {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            margin: 0;
+        }
+
+        .show-more-container {
+            text-align: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-top: 1px solid #eee;
+        }
+
+        .show-more-btn {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background-color 0.3s;
+        }
+
+        .show-more-btn:hover {
+            background: #5a6268;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border: 1px solid #f5c6cb;
+        }
+
+        .no-data-message {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .no-data-message .icon {
+            font-size: 3rem;
+            margin-bottom: 20px;
+        }
+
+        .no-data-message h4 {
+            margin-bottom: 10px;
+        }
+
+        /* Mobile Styles */
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+                max-width: 100%;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .header p {
+                font-size: 1rem;
+            }
+
+            .content-area {
+                padding: 20px 15px;
+                margin: 0;
+            }
+
+            .nav-links {
+                margin-bottom: 15px;
+            }
+
+            .nav-link {
+                display: block;
+                margin: 5px 0;
+                padding: 8px 16px;
+                font-size: 0.9rem;
+            }
+
+            .leaderboard-container {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                border-radius: 8px;
+            }
+
+            .leaderboard-table {
+                min-width: 900px;
+            }
+
+            .leaderboard-table th,
+            .leaderboard-table td {
+                padding: 10px 8px;
+                font-size: 0.85rem;
+                white-space: nowrap;
+            }
+
+            .rank-cell {
+                width: 50px;
+                min-width: 50px;
+            }
+
+            .player-name, .model-name {
+                min-width: 120px;
+                max-width: 150px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .win-rate, .success-rate {
+                font-size: 0.9rem;
+            }
+        }
+
+        /* Very small mobile devices */
+        @media (max-width: 480px) {
+            .container {
+                padding: 5px;
+            }
+
+            .header h1 {
+                font-size: 1.5rem;
+            }
+
+            .header p {
+                font-size: 0.9rem;
+            }
+
+            .content-area {
+                padding: 15px 10px;
+            }
+
+            .leaderboard-table {
+                min-width: 1000px;
+                font-size: 0.75rem;
+            }
+
+            .leaderboard-table th {
+                padding: 8px 6px;
+                font-size: 0.7rem;
+                letter-spacing: 0.3px;
+                white-space: nowrap;
+            }
+
+            .leaderboard-table td {
+                padding: 8px 6px;
+                font-size: 0.75rem;
+                white-space: nowrap;
+            }
+
+            .rank-cell {
+                width: 40px;
+                min-width: 40px;
+                font-size: 0.8rem;
+                padding: 8px 4px;
+            }
+
+            .player-name, .model-name {
+                font-size: 0.75rem;
+                min-width: 100px;
+                max-width: 120px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
+            .win-rate, .success-rate {
+                font-size: 0.75rem;
+                font-weight: bold;
+            }
+
+            .show-more-container {
+                padding: 10px;
+            }
+
+            .show-more-btn {
+                padding: 6px 12px;
+                font-size: 0.8rem;
+                width: 100%;
+            }
+        }
+
+        /* Ultra-small screens (320px and below) */
+        @media (max-width: 320px) {
+            .leaderboard-table {
+                min-width: 900px;
+                font-size: 0.7rem;
+            }
+
+            .leaderboard-table th,
+            .leaderboard-table td {
+                padding: 6px 4px;
+                font-size: 0.7rem;
+                white-space: nowrap;
+            }
+
+            .rank-cell {
+                width: 35px;
+                min-width: 35px;
+                font-size: 0.7rem;
+            }
+
+            .player-name, .model-name {
+                min-width: 90px;
+                max-width: 100px;
+                font-size: 0.7rem;
+            }
+        }
+
+        /* Analytics Section Styles */
+        .analytics-toggle-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .analytics-toggle-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .analytics-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .analytics-header h3 {
+            font-size: 1.8rem;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .analytics-subtitle {
+            color: #666;
+            font-size: 1rem;
+            font-style: italic;
+        }
+
+        .analytics-controls {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            border: 1px solid #e9ecef;
+        }
+
+        .comparison-type-selector {
+            margin-bottom: 20px;
+        }
+
+        .comparison-type-selector label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .comparison-type-selector select {
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+            width: 200px;
+            background: white;
+        }
+
+        .entity-selector {
+            margin-bottom: 20px;
+        }
+
+        .entity-selector label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .quick-actions {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            padding: 15px;
+            background: #e9ecef;
+            border-radius: 8px;
+        }
+
+        .quick-action-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: bold;
+            transition: all 0.3s;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        .quick-action-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .selection-counter {
+            margin-left: auto;
+            font-weight: bold;
+            color: #333;
+            padding: 8px 12px;
+            background: white;
+            border-radius: 15px;
+            font-size: 0.9rem;
+        }
+
+        .entity-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+            max-height: 400px;
+            overflow-y: auto;
+            padding: 10px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            background: #f8f9fa;
+        }
+
+        .loading-grid {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-style: italic;
+        }
+
+        .entity-card {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 15px;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .entity-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border-color: #667eea;
+        }
+
+        .entity-card.selected {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #f8f9ff 0%, #ffffff 100%);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .entity-card.top-performer {
+            border-color: #ffd700;
+            background: linear-gradient(135deg, #fffbf0 0%, #ffffff 100%);
+        }
+
+        .entity-card.top-performer::before {
+            content: '🏆';
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 1.2rem;
+        }
+
+        .entity-checkbox {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: #667eea;
+        }
+
+        .entity-info {
+            margin-left: 30px;
+        }
+
+        .entity-name {
+            font-weight: bold;
+            font-size: 1rem;
+            color: #333;
+            margin-bottom: 8px;
+            line-height: 1.2;
+        }
+
+        .entity-stats {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: #667eea;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .performance-indicator {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 8px;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .performance-indicator.excellent {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .performance-indicator.good {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .performance-indicator.average {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .performance-indicator.below-average {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .generate-button {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4);
+        }
+
+        .generate-button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.6);
+        }
+
+        .generate-button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .results-header {
+            margin-bottom: 25px;
+            text-align: center;
+        }
+
+        .results-header h4 {
+            font-size: 1.5rem;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .results-info {
+            color: #666;
+            font-size: 1rem;
+        }
+
+        .visualization-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 30px;
+        }
+
+        .chart-container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .chart-container canvas {
+            max-width: 100%;
+            height: auto;
+        }
+
+        .metrics-table-container {
+            background: white;
+            border-radius: 10px;
+            overflow-x: auto;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .metrics-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        .metrics-table th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 10px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 0.85rem;
+        }
+
+        .metrics-table td {
+            padding: 10px;
+            text-align: center;
+            border-bottom: 1px solid #eee;
+        }
+
+        .metrics-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .confidence-interval {
+            font-size: 0.8rem;
+            color: #666;
+            font-style: italic;
+        }
+
+        .significance-indicator {
+            font-weight: bold;
+        }
+
+        .significance-indicator.high {
+            color: #28a745;
+        }
+
+        .significance-indicator.medium {
+            color: #ffc107;
+        }
+
+        .significance-indicator.low {
+            color: #6c757d;
+        }
+
+        /* View Controls Styles */
+        .view-controls {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            border: 1px solid #e9ecef;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+        }
+
+        .view-toggle {
+            display: flex;
+            gap: 10px;
+        }
+
+        .view-btn {
+            background: #fff;
+            border: 2px solid #e9ecef;
+            color: #333;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: bold;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+
+        .view-btn:hover {
+            border-color: #667eea;
+            transform: translateY(-1px);
+        }
+
+        .view-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: #667eea;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        .metric-selector {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .metric-selector label {
+            font-weight: bold;
+            color: #333;
+            white-space: nowrap;
+        }
+
+        .metric-selector select {
+            padding: 8px 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            background: white;
+            color: #333;
+            cursor: pointer;
+            min-width: 180px;
+        }
+
+        .metric-selector select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .metric-type-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .metric-type-toggle label {
+            font-weight: bold;
+            color: #333;
+            white-space: nowrap;
+        }
+
+        .metric-type-toggle select {
+            padding: 8px 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            background: white;
+            color: #333;
+            cursor: pointer;
+            min-width: 200px;
+        }
+
+        .metric-type-toggle select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        @media (max-width: 768px) {
+            .analytics-controls {
+                padding: 20px 15px;
+            }
+
+            .comparison-type-selector select {
+                width: 100%;
+            }
+
+            .selected-entities {
+                justify-content: center;
+            }
+
+            .generate-button {
+                width: 100%;
+                padding: 15px;
+            }
+
+            .visualization-container {
+                gap: 20px;
+            }
+
+            .chart-container {
+                padding: 15px;
+            }
+
+            .metrics-table {
+                font-size: 0.8rem;
+            }
+
+            .metrics-table th,
+            .metrics-table td {
+                padding: 8px 6px;
+            }
+
+            .view-controls {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 15px;
+            }
+
+            .view-toggle {
+                justify-content: center;
+            }
+
+            .metric-type-toggle {
+                justify-content: center;
+            }
+
+            .metric-type-toggle select {
+                min-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏆 Tournament Leaderboard</h1>
+            <p>Live rankings and statistics from AI at Risk tournaments</p>
+            <p style="font-size: 0.9rem; opacity: 0.8; margin-top: 10px;">
+                A project by <a href="https://andreasthinks.me/posts/ai-at-play/" target="_blank" style="color: #fff; text-decoration: underline;">AndreasThinks</a> (and some ✨vibes✨)
+            </p>
+        </div>
+
+        <div class="nav-links">
+            <a href="/tournament_interface.html" class="nav-link">🏆 Tournament</a>
+            <a href="/tournament_leaderboard.html" class="nav-link" style="background: rgba(255, 255, 255, 0.4);">📊 Leaderboard</a>
+            <a href="/character_library.html" class="nav-link">📚 Character Library</a>
+            <a href="/about_this.html" class="nav-link">🔮 About This</a>
+            <a href="/support_me.html" class="nav-link">❤️ Support Me</a>
+        </div>
+
+        <div class="content-area">
+            <div class="refresh-info">
+                📊 Live leaderboard data • Auto-refreshes every 30 seconds • <span id="last-updated">Loading...</span>
+            </div>
+
+            <div id="leaderboard-content">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Loading tournament leaderboards...</p>
+                </div>
+            </div>
+            
+            <!-- Benchmarks Section (Visible by Default) -->
+            <div id="benchmarks-section" style="margin-top: 40px;">
+                <div class="analytics-header">
+                    <h3>📊 Benchmarks</h3>
+                    <p class="analytics-subtitle">Statistical comparison with 95% confidence intervals</p>
+                </div>
+                
+                <div class="analytics-controls">
+                    <div class="comparison-type-selector">
+                        <label for="comparison-type">Compare:</label>
+                        <select id="comparison-type">
+                            <option value="characters">Characters</option>
+                            <option value="models">AI Models</option>
+                        </select>
+                    </div>
+                    
+                    <div class="entity-selector">
+                        <label>Select entities to compare:</label>
+                        
+                        <div class="quick-actions">
+                            <button id="select-all-btn" class="quick-action-btn">Select All</button>
+                            <button id="clear-all-btn" class="quick-action-btn">Clear All</button>
+                            <button id="select-top-btn" class="quick-action-btn">Top Performers</button>
+                            <div class="selection-counter">
+                                <span id="selection-count">0</span> entities selected
+                            </div>
+                        </div>
+                        
+                        <div id="entity-grid" class="entity-grid">
+                            <div class="loading-grid">Loading entities...</div>
+                        </div>
+                    </div>
+                    
+                    <button id="generate-comparison" class="generate-button" disabled>
+                        Generate Comparison
+                    </button>
+                </div>
+                
+                <div id="analytics-results" style="display: none;">
+                    <div class="results-header">
+                        <h4>Comparison Results</h4>
+                        <div class="results-info">
+                            <span id="entities-compared">0</span> entities compared • 
+                            <span id="games-analyzed">0</span> games analyzed
+                        </div>
+                    </div>
+                    
+                        <div class="view-controls">
+                            <div class="view-toggle">
+                                <button id="multi-metric-btn" class="view-btn active">📊 Multi-Metric View</button>
+                                <button id="single-metric-btn" class="view-btn">📈 Single Metric View</button>
+                            </div>
+                            
+                            <div class="metric-type-toggle">
+                                <label for="metric-type-selector">Metric Type:</label>
+                                <select id="metric-type-selector">
+                                    <option value="per_game">Per Game (Raw Counts)</option>
+                                    <option value="per_action">Per Successful Action (Behavioral %)</option>
+                                </select>
+                            </div>
+                            
+                            <div id="metric-selector" class="metric-selector" style="display: none;">
+                                <label for="selected-metric">Focus Metric:</label>
+                                <select id="selected-metric">
+                                    <option value="win_rate">Win Rate (%)</option>
+                                    <option value="success_rate">Success Rate (%)</option>
+                                    <option value="attacks_per_game">Attacks per Game</option>
+                                    <option value="messages_per_game">Messages per Game</option>
+                                    <option value="card_trades_per_game">Card Trades per Game</option>
+                                    <option value="fortifications_per_game">Fortifications per Game</option>
+                                    <option value="army_placements_per_game">Army Placements per Game</option>
+                                    <option value="avg_decision_time">Decision Time (s)</option>
+                                </select>
+                            </div>
+                        </div>
+                    
+                    <div class="visualization-container">
+                        <div id="multi-metric-view" class="chart-container">
+                            <canvas id="comparison-chart" width="800" height="400"></canvas>
+                        </div>
+                        
+                        <div id="single-metric-view" class="chart-container" style="display: none;">
+                            <canvas id="single-metric-chart" width="800" height="400"></canvas>
+                        </div>
+                        
+                        <div class="metrics-table-container">
+                            <table id="metrics-table" class="metrics-table">
+                                <thead>
+                                    <tr>
+                                        <th class="sortable-header" data-column="name" onclick="handleAnalyticsSort('name')">Entity</th>
+                                        <th class="sortable-header" data-column="games_played" onclick="handleAnalyticsSort('games_played')">Games</th>
+                                        <th class="sortable-header" data-column="win_rate" onclick="handleAnalyticsSort('win_rate')">Win Rate (%)</th>
+                                        <th class="sortable-header" data-column="success_rate" onclick="handleAnalyticsSort('success_rate')">Success Rate (%)</th>
+                                        <th class="sortable-header" data-column="attacks_per_game" onclick="handleAnalyticsSort('attacks_per_game')">Attacks/Game</th>
+                                        <th class="sortable-header" data-column="messages_per_game" onclick="handleAnalyticsSort('messages_per_game')">Messages/Game</th>
+                                        <th class="sortable-header" data-column="avg_decision_time" onclick="handleAnalyticsSort('avg_decision_time')">Decision Time (s)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="metrics-table-body">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Benchmarks Toggle Button -->
+            <div class="analytics-toggle-container" style="text-align: center; margin-top: 30px;">
+                <button id="analytics-toggle" class="analytics-toggle-button">
+                    📊 Hide Benchmarks
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="share-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeShareModal()">&times;</span>
+            <h3 id="modal-title">Share Leaderboard</h3>
+            <div>
+                <h4>Direct Link</h4>
+                <input type="text" id="direct-link" readonly>
+                <button onclick="copyToClipboard('direct-link')">Copy Link</button>
+            </div>
+            <div>
+                <h4>Embed Code</h4>
+                <input type="text" id="embed-code" readonly>
+                <button onclick="copyToClipboard('embed-code')">Copy Embed</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let fullCharacterLeaderboard = [];
+        let fullModelLeaderboard = [];
+        let refreshInterval = null;
+        let characterSortConfig = { column: 'win_rate', direction: 'desc' };
+        let modelSortConfig = { column: 'win_rate', direction: 'desc' };
+
+        // Utility function to escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Format timestamp for display
+        function formatTimestamp() {
+            return new Date().toLocaleTimeString();
+        }
+
+        // Sort data by column
+        function sortData(data, column, direction) {
+            return [...data].sort((a, b) => {
+                let aVal = a[column];
+                let bVal = b[column];
+                
+                // Handle numeric values
+                if (typeof aVal === 'string' && !isNaN(parseFloat(aVal))) {
+                    aVal = parseFloat(aVal);
+                }
+                if (typeof bVal === 'string' && !isNaN(parseFloat(bVal))) {
+                    bVal = parseFloat(bVal);
+                }
+                
+                // Handle string comparison
+                if (typeof aVal === 'string' && typeof bVal === 'string') {
+                    aVal = aVal.toLowerCase();
+                    bVal = bVal.toLowerCase();
+                }
+                
+                if (direction === 'asc') {
+                    return aVal > bVal ? 1 : -1;
+                } else {
+                    return aVal < bVal ? 1 : -1;
+                }
+            });
+        }
+
+        // Handle column header click for sorting
+        function handleSort(tableType, column) {
+            if (tableType === 'character') {
+                // Toggle direction if same column, otherwise reset to desc
+                if (characterSortConfig.column === column) {
+                    characterSortConfig.direction = characterSortConfig.direction === 'desc' ? 'asc' : 'desc';
+                } else {
+                    characterSortConfig.column = column;
+                    characterSortConfig.direction = 'desc';
+                }
+                
+                // Sort and re-render character table
+                const sortedData = sortData(fullCharacterLeaderboard, column, characterSortConfig.direction);
+                renderCharacterTable(sortedData, true);
+                
+            } else if (tableType === 'model') {
+                // Toggle direction if same column, otherwise reset to desc
+                if (modelSortConfig.column === column) {
+                    modelSortConfig.direction = modelSortConfig.direction === 'desc' ? 'asc' : 'desc';
+                } else {
+                    modelSortConfig.column = column;
+                    modelSortConfig.direction = 'desc';
+                }
+                
+                // Sort and re-render model table
+                const sortedData = sortData(fullModelLeaderboard, column, modelSortConfig.direction);
+                renderModelTable(sortedData);
+            }
+        }
+
+        // Load leaderboard data
+        async function loadLeaderboards() {
+            try {
+                // Fetch both leaderboards in parallel
+                const [characterResponse, modelResponse] = await Promise.all([
+                    fetch('/api/leaderboard/characters?limit=50'),
+                    fetch('/api/leaderboard/models?limit=20')
+                ]);
+
+                const characterData = await characterResponse.json();
+                const modelData = await modelResponse.json();
+
+                const characters = characterData.characters || [];
+                const models = modelData.models || [];
+
+                // Store full data for sorting functionality
+                fullCharacterLeaderboard = characters;
+                fullModelLeaderboard = models;
+
+                // Update last updated timestamp
+                document.getElementById('last-updated').textContent = `Last updated: ${formatTimestamp()}`;
+
+                // Render leaderboards structure
+                renderLeaderboards(characters, models, characterData.games_analyzed || 0);
+
+                // After rendering structure, apply initial sorting to tables
+                setTimeout(() => {
+                    renderCharacterTable(characters);
+                    renderModelTable(models);
+                }, 100);
+
+            } catch (error) {
+                console.error('Error loading leaderboards:', error);
+                showError('Failed to load leaderboard data. Please refresh the page.');
+            }
+        }
+
+        // Render character table with sorting support
+        function renderCharacterTable(characters, skipSort = false) {
+            const tbody = document.getElementById('character-leaderboard-body');
+            if (!tbody) return;
+            
+            // Sort characters if not skipped
+            const sortedCharacters = skipSort ? characters : sortData(characters, characterSortConfig.column, characterSortConfig.direction);
+            
+            tbody.innerHTML = sortedCharacters.slice(0, 10).map((character, index) => `
+                <tr class="${index < 3 ? 'top-player' : ''}">
+                    <td class="rank-cell">
+                        ${index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : index + 1}
+                    </td>
+                    <td class="player-name">${escapeHtml(character.character_name)}</td>
+                    <td>${character.games_played}</td>
+                    <td class="win-rate">${character.win_rate}%</td>
+                    <td class="success-rate">${character.success_rate}%</td>
+                    <td class="mobile-hide">${character.attacks_per_game}</td>
+                    <td class="mobile-hide">${character.messages_per_game}</td>
+                    <td class="mobile-hide">${character.card_trades_per_game}</td>
+                    <td class="mobile-hide">${character.fortifications_per_game}</td>
+                    <td class="mobile-hide">${character.army_placements_per_game}</td>
+                </tr>
+            `).join('');
+            
+            // Update sorting indicators
+            updateSortIndicators('character');
+        }
+
+        // Render model table with sorting support  
+        function renderModelTable(models) {
+            const tbody = document.getElementById('model-leaderboard-body');
+            if (!tbody) return;
+            
+            // Sort models
+            const sortedModels = sortData(models, modelSortConfig.column, modelSortConfig.direction);
+            
+            tbody.innerHTML = sortedModels.map((model, index) => `
+                <tr class="${index < 3 ? 'top-model' : ''}">
+                    <td class="rank-cell">
+                        ${index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : index + 1}
+                    </td>
+                    <td class="model-name">${escapeHtml(model.model_name)}</td>
+                    <td>${model.games_played}</td>
+                    <td class="win-rate">${model.win_rate}%</td>
+                    <td class="success-rate">${model.success_rate}%</td>
+                    <td class="mobile-hide">${model.attacks_per_game}</td>
+                    <td class="mobile-hide">${model.messages_per_game}</td>
+                    <td class="mobile-hide">${model.card_trades_per_game}</td>
+                    <td class="mobile-hide">${model.fortifications_per_game}</td>
+                    <td class="mobile-hide">${model.army_placements_per_game}</td>
+                    <td>${model.avg_decision_time}s</td>
+                    <td class="mobile-hide">${model.unique_players}</td>
+                </tr>
+            `).join('');
+            
+            // Update sorting indicators
+            updateSortIndicators('model');
+        }
+
+        // Update sorting indicators on table headers
+        function updateSortIndicators(tableType) {
+            const prefix = tableType === 'character' ? 'char' : 'model';
+            const config = tableType === 'character' ? characterSortConfig : modelSortConfig;
+            
+            // Remove all existing sort classes
+            document.querySelectorAll(`#${prefix}-table .sortable-header`).forEach(header => {
+                header.classList.remove('sort-asc', 'sort-desc');
+            });
+            
+            // Add appropriate sort class to active column
+            const activeHeader = document.querySelector(`#${prefix}-table .sortable-header[data-column="${config.column}"]`);
+            if (activeHeader) {
+                activeHeader.classList.add(config.direction === 'asc' ? 'sort-asc' : 'sort-desc');
+            }
+        }
+
+        // Render both leaderboards
+        function renderLeaderboards(characters, models, gamesAnalyzed) {
+            const content = document.getElementById('leaderboard-content');
+            
+            // Calculate total games from both leaderboards
+            const totalGamesFromChars = characters.reduce((sum, char) => sum + char.games_played, 0);
+            const totalGamesFromModels = models.reduce((sum, model) => sum + model.games_played, 0);
+            const totalGames = Math.max(totalGamesFromChars, totalGamesFromModels, gamesAnalyzed);
+            
+            content.innerHTML = `
+                <!-- Games Summary -->
+                <div class="games-summary">
+                    <h4>Tournament Statistics</h4>
+                    <div class="total-count">${totalGames}</div>
+                    <p class="subtitle">Total games completed across all tournaments</p>
+                </div>
+
+                <!-- Character Leaderboard -->
+                <div id="character-leaderboard-section" class="leaderboard-section">
+                    <h3>🏅 Character Leaderboard <button class="share-btn" onclick="showShareModal('character')">🔗 Share</button></h3>
+                    <p class="leaderboard-subtitle">Top performing characters across all tournaments • Click column headers to sort</p>
+                    
+                    ${characters.length > 0 ? `
+                        <div class="leaderboard-container">
+                            <table class="leaderboard-table" id="char-table">
+                                <thead>
+                                    <tr>
+                                        <th>Rank</th>
+                                        <th class="sortable-header" data-column="character_name" onclick="handleSort('character', 'character_name')">Character</th>
+                                        <th class="sortable-header" data-column="games_played" onclick="handleSort('character', 'games_played')">Games</th>
+                                        <th class="sortable-header" data-column="win_rate" onclick="handleSort('character', 'win_rate')">Win Rate</th>
+                                        <th class="sortable-header" data-column="success_rate" onclick="handleSort('character', 'success_rate')">Action Success Rate</th>
+                                        <th class="mobile-hide sortable-header" data-column="attacks_per_game" onclick="handleSort('character', 'attacks_per_game')">Attacks/Game</th>
+                                        <th class="mobile-hide sortable-header" data-column="messages_per_game" onclick="handleSort('character', 'messages_per_game')">Messages/Game</th>
+                                        <th class="mobile-hide sortable-header" data-column="card_trades_per_game" onclick="handleSort('character', 'card_trades_per_game')">Card Trades/Game</th>
+                                        <th class="mobile-hide sortable-header" data-column="fortifications_per_game" onclick="handleSort('character', 'fortifications_per_game')">Fortifications/Game</th>
+                                        <th class="mobile-hide sortable-header" data-column="army_placements_per_game" onclick="handleSort('character', 'army_placements_per_game')">Army Placements/Game</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="character-leaderboard-body">
+                                    ${characters.slice(0, 10).map((character, index) => `
+                                        <tr class="${index < 3 ? 'top-player' : ''}">
+                                            <td class="rank-cell">
+                                                ${index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : index + 1}
+                                            </td>
+                                            <td class="player-name">${escapeHtml(character.character_name)}</td>
+                                            <td>${character.games_played}</td>
+                                            <td class="win-rate">${character.win_rate}%</td>
+                                            <td class="success-rate">${character.success_rate}%</td>
+                                            <td class="mobile-hide">${character.attacks_per_game}</td>
+                                            <td class="mobile-hide">${character.messages_per_game}</td>
+                                            <td class="mobile-hide">${character.card_trades_per_game}</td>
+                                            <td class="mobile-hide">${character.fortifications_per_game}</td>
+                                            <td class="mobile-hide">${character.army_placements_per_game}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                            
+                            ${characters.length > 10 ? `
+                                <div class="show-more-container">
+                                    <button class="show-more-btn" onclick="toggleCharacterLeaderboard()">
+                                        Show All ${characters.length} Characters
+                                    </button>
+                                </div>
+                            ` : ''}
+                        </div>
+                    ` : `
+                        <div class="leaderboard-container">
+                            <div class="no-data-message">
+                                <div class="icon">📊</div>
+                                <h4>No Character Data Yet</h4>
+                                <p>Character leaderboards will appear after tournaments are completed.</p>
+                                <p style="font-size: 0.9rem; margin-top: 10px; opacity: 0.8;">
+                                    Complete some games to see rankings here!
+                                </p>
+                            </div>
+                        </div>
+                    `}
+                </div>
+                
+                <!-- Model Leaderboard -->
+                <div id="model-leaderboard-section" class="leaderboard-section">
+                    <h3>🤖 AI Model Leaderboard <button class="share-btn" onclick="showShareModal('model')">🔗 Share</button></h3>
+                    <p class="leaderboard-subtitle">Most effective AI models in tournament play • Click column headers to sort</p>
+                    
+                    ${models.length > 0 ? `
+                        <div class="leaderboard-container">
+                            <table class="leaderboard-table" id="model-table">
+                                <thead>
+                                    <tr>
+                                        <th>Rank</th>
+                                        <th class="sortable-header" data-column="model_name" onclick="handleSort('model', 'model_name')">Model</th>
+                                        <th class="sortable-header" data-column="games_played" onclick="handleSort('model', 'games_played')">Games</th>
+                                        <th class="sortable-header" data-column="win_rate" onclick="handleSort('model', 'win_rate')">Win Rate</th>
+                                        <th class="sortable-header" data-column="success_rate" onclick="handleSort('model', 'success_rate')">Action Success Rate</th>
+                                        <th class="mobile-hide sortable-header" data-column="attacks_per_game" onclick="handleSort('model', 'attacks_per_game')">Attacks/Game</th>
+                                        <th class="mobile-hide sortable-header" data-column="messages_per_game" onclick="handleSort('model', 'messages_per_game')">Messages/Game</th>
+                                        <th class="mobile-hide sortable-header" data-column="card_trades_per_game" onclick="handleSort('model', 'card_trades_per_game')">Card Trades/Game</th>
+                                        <th class="mobile-hide sortable-header" data-column="fortifications_per_game" onclick="handleSort('model', 'fortifications_per_game')">Fortifications/Game</th>
+                                        <th class="mobile-hide sortable-header" data-column="army_placements_per_game" onclick="handleSort('model', 'army_placements_per_game')">Army Placements/Game</th>
+                                        <th class="sortable-header" data-column="avg_decision_time" onclick="handleSort('model', 'avg_decision_time')">Avg Decision Time</th>
+                                        <th class="mobile-hide sortable-header" data-column="unique_players" onclick="handleSort('model', 'unique_players')">Players</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="model-leaderboard-body">
+                                    ${models.map((model, index) => `
+                                        <tr class="${index < 3 ? 'top-model' : ''}">
+                                            <td class="rank-cell">
+                                                ${index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : index + 1}
+                                            </td>
+                                            <td class="model-name">${escapeHtml(model.model_name)}</td>
+                                            <td>${model.games_played}</td>
+                                            <td class="win-rate">${model.win_rate}%</td>
+                                            <td class="success-rate">${model.success_rate}%</td>
+                                            <td class="mobile-hide">${model.attacks_per_game}</td>
+                                            <td class="mobile-hide">${model.messages_per_game}</td>
+                                            <td class="mobile-hide">${model.card_trades_per_game}</td>
+                                            <td class="mobile-hide">${model.fortifications_per_game}</td>
+                                            <td class="mobile-hide">${model.army_placements_per_game}</td>
+                                            <td>${model.avg_decision_time}s</td>
+                                            <td class="mobile-hide">${model.unique_players}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    ` : `
+                        <div class="leaderboard-container">
+                            <div class="no-data-message">
+                                <div class="icon">🤖</div>
+                                <h4>No Model Data Yet</h4>
+                                <p>AI model leaderboards will appear after tournaments are completed.</p>
+                                <p style="font-size: 0.9rem; margin-top: 10px; opacity: 0.8;">
+                                    Complete some games to see model performance rankings!
+                                </p>
+                            </div>
+                        </div>
+                    `}
+                </div>
+            `;
+        }
+
+        // Toggle full character leaderboard
+        function toggleCharacterLeaderboard() {
+            const tbody = document.getElementById('character-leaderboard-body');
+            const button = document.querySelector('.show-more-btn');
+            
+            if (!fullCharacterLeaderboard || fullCharacterLeaderboard.length === 0) return;
+            
+            const isShowingAll = button.textContent.includes('Show Less');
+            
+            if (isShowingAll) {
+                // Show only top 10
+                tbody.innerHTML = fullCharacterLeaderboard.slice(0, 10).map((character, index) => `
+                    <tr class="${index < 3 ? 'top-player' : ''}">
+                        <td class="rank-cell">
+                            ${index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : index + 1}
+                        </td>
+                        <td class="player-name">${escapeHtml(character.character_name)}</td>
+                        <td>${character.games_played}</td>
+                        <td class="win-rate">${character.win_rate}%</td>
+                        <td class="success-rate">${character.success_rate}%</td>
+                        <td class="mobile-hide">${character.attacks_per_game}</td>
+                        <td class="mobile-hide">${character.messages_per_game}</td>
+                        <td class="mobile-hide">${character.card_trades_per_game}</td>
+                        <td class="mobile-hide">${character.fortifications_per_game}</td>
+                        <td class="mobile-hide">${character.army_placements_per_game}</td>
+                    </tr>
+                `).join('');
+                button.textContent = `Show All ${fullCharacterLeaderboard.length} Characters`;
+            } else {
+                // Show all characters
+                tbody.innerHTML = fullCharacterLeaderboard.map((character, index) => `
+                    <tr class="${index < 3 ? 'top-player' : ''}">
+                        <td class="rank-cell">
+                            ${index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : index + 1}
+                        </td>
+                        <td class="player-name">${escapeHtml(character.character_name)}</td>
+                        <td>${character.games_played}</td>
+                        <td class="win-rate">${character.win_rate}%</td>
+                        <td class="success-rate">${character.success_rate}%</td>
+                        <td class="mobile-hide">${character.attacks_per_game}</td>
+                        <td class="mobile-hide">${character.messages_per_game}</td>
+                        <td class="mobile-hide">${character.card_trades_per_game}</td>
+                        <td class="mobile-hide">${character.fortifications_per_game}</td>
+                        <td class="mobile-hide">${character.army_placements_per_game}</td>
+                    </tr>
+                `).join('');
+                button.textContent = 'Show Less';
+            }
+        }
+
+        // Show error message
+        function showError(message) {
+            const content = document.getElementById('leaderboard-content');
+            content.innerHTML = `
+                <div class="error-message">
+                    ${escapeHtml(message)}
+                </div>
+            `;
+        }
+
+        // Analytics Variables
+        let availableEntities = { characters: [], models: [] };
+        let selectedEntities = [];
+        let analyticsChart = null;
+        let singleMetricChart = null;
+        let comparisonData = null;
+        let analyticsSortConfig = { column: 'games_played', direction: 'desc' };
+
+        // Rounding utility functions
+        function roundPercent(value) {
+            return Math.round(value * 10) / 10; // 1 decimal place
+        }
+
+        function roundMetric(value) {
+            return Math.round(value * 10) / 10; // 1 decimal place  
+        }
+
+        function roundTime(value) {
+            return Math.round(value * 100) / 100; // 2 decimal places
+        }
+
+        // Analytics Functions
+        async function loadAvailableEntities() {
+            try {
+                const response = await fetch('/api/analytics/entities');
+                const data = await response.json();
+                availableEntities = data;
+                renderEntityGrid();
+            } catch (error) {
+                console.error('Error loading available entities:', error);
+                document.getElementById('entity-grid').innerHTML = '<div class="loading-grid">Failed to load entities</div>';
+            }
+        }
+
+        function toggleAnalytics() {
+            const section = document.getElementById('benchmarks-section');
+            const button = document.getElementById('analytics-toggle');
+            
+            if (section.style.display === 'none') {
+                section.style.display = 'block';
+                button.textContent = '📊 Hide Benchmarks';
+                loadAvailableEntities();
+            } else {
+                section.style.display = 'none';
+                button.textContent = '📊 Show Benchmarks';
+            }
+        }
+
+        function renderEntityGrid() {
+            const grid = document.getElementById('entity-grid');
+            const comparisonType = document.getElementById('comparison-type').value;
+            const entities = availableEntities[comparisonType] || [];
+            
+            if (entities.length === 0) {
+                grid.innerHTML = '<div class="loading-grid">No entities available for comparison</div>';
+                return;
+            }
+
+            // Sort entities by performance (if we have leaderboard data)
+            const sortedEntities = [...entities].sort((a, b) => {
+                const aData = getEntityLeaderboardData(a, comparisonType);
+                const bData = getEntityLeaderboardData(b, comparisonType);
+                
+                if (!aData || !bData) return 0;
+                
+                // Sort by win rate descending
+                return parseFloat(bData.win_rate) - parseFloat(aData.win_rate);
+            });
+
+            grid.innerHTML = sortedEntities.map((entity, index) => {
+                const entityData = getEntityLeaderboardData(entity, comparisonType);
+                const isSelected = selectedEntities.includes(entity);
+                const isTopPerformer = index < 5; // Top 5 are considered top performers
+                
+                const winRate = entityData ? entityData.win_rate : 'N/A';
+                const gamesPlayed = entityData ? entityData.games_played : 'N/A';
+                const successRate = entityData ? entityData.success_rate : 'N/A';
+                
+                let performanceClass = 'average';
+                let performanceText = 'Average';
+                
+                if (entityData && parseFloat(entityData.win_rate) >= 70) {
+                    performanceClass = 'excellent';
+                    performanceText = 'Excellent';
+                } else if (entityData && parseFloat(entityData.win_rate) >= 50) {
+                    performanceClass = 'good';
+                    performanceText = 'Good';
+                } else if (entityData && parseFloat(entityData.win_rate) < 30) {
+                    performanceClass = 'below-average';
+                    performanceText = 'Below Average';
+                }
+
+                return `
+                    <div class="entity-card ${isSelected ? 'selected' : ''} ${isTopPerformer ? 'top-performer' : ''}" 
+                         onclick="toggleEntitySelection('${escapeHtml(entity)}')">
+                        <input type="checkbox" class="entity-checkbox" ${isSelected ? 'checked' : ''} 
+                               onchange="toggleEntitySelection('${escapeHtml(entity)}')" />
+                        
+                        <div class="entity-info">
+                            <div class="entity-name">${escapeHtml(entity)}</div>
+                            
+                            <div class="entity-stats">
+                                <div class="stat-item">
+                                    <div class="stat-value">${winRate}${winRate !== 'N/A' ? '%' : ''}</div>
+                                    <div class="stat-label">Win Rate</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-value">${gamesPlayed}</div>
+                                    <div class="stat-label">Games</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-value">${successRate}${successRate !== 'N/A' ? '%' : ''}</div>
+                                    <div class="stat-label">Success</div>
+                                </div>
+                            </div>
+                            
+                            <div class="performance-indicator ${performanceClass}">
+                                ${performanceText}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function getEntityLeaderboardData(entityName, type) {
+            if (type === 'characters') {
+                return fullCharacterLeaderboard.find(char => char.character_name === entityName);
+            } else {
+                return fullModelLeaderboard.find(model => model.model_name === entityName);
+            }
+        }
+
+        function toggleEntitySelection(entityName) {
+            const index = selectedEntities.indexOf(entityName);
+            
+            if (index === -1) {
+                // Add to selection
+                selectedEntities.push(entityName);
+            } else {
+                // Remove from selection
+                selectedEntities.splice(index, 1);
+            }
+            
+            updateSelectionUI();
+        }
+
+        function updateSelectionUI() {
+            // Update selection counter
+            document.getElementById('selection-count').textContent = selectedEntities.length;
+            
+            // Update generate button
+            document.getElementById('generate-comparison').disabled = selectedEntities.length < 2;
+            
+            // Update card styles
+            document.querySelectorAll('.entity-card').forEach(card => {
+                const checkbox = card.querySelector('.entity-checkbox');
+                const entityName = checkbox.onchange.toString().match(/'([^']+)'/)[1];
+                const isSelected = selectedEntities.includes(entityName);
+                
+                card.classList.toggle('selected', isSelected);
+                checkbox.checked = isSelected;
+            });
+        }
+
+        function selectAllEntities() {
+            const comparisonType = document.getElementById('comparison-type').value;
+            const entities = availableEntities[comparisonType] || [];
+            selectedEntities = [...entities];
+            updateSelectionUI();
+        }
+
+        function clearAllEntities() {
+            selectedEntities = [];
+            updateSelectionUI();
+        }
+
+        function selectTopPerformers() {
+            const comparisonType = document.getElementById('comparison-type').value;
+            const entities = availableEntities[comparisonType] || [];
+            
+            // Sort entities by performance and take top 5
+            const sortedEntities = [...entities].sort((a, b) => {
+                const aData = getEntityLeaderboardData(a, comparisonType);
+                const bData = getEntityLeaderboardData(b, comparisonType);
+                
+                if (!aData || !bData) return 0;
+                return parseFloat(bData.win_rate) - parseFloat(aData.win_rate);
+            });
+            
+            selectedEntities = sortedEntities.slice(0, 5);
+            updateSelectionUI();
+        }
+
+        function onComparisonTypeChange() {
+            selectedEntities = [];
+            updateSelectionUI();
+            renderEntityGrid();
+        }
+
+        async function generateComparison() {
+            const comparisonType = document.getElementById('comparison-type').value;
+            const generateButton = document.getElementById('generate-comparison');
+            const resultsSection = document.getElementById('analytics-results');
+
+            if (selectedEntities.length < 2) {
+                alert('Please select at least 2 entities to compare');
+                return;
+            }
+
+            // Show loading state
+            generateButton.textContent = 'Generating...';
+            generateButton.disabled = true;
+
+            try {
+                const response = await fetch('/api/analytics/compare', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        type: comparisonType,
+                        entities: selectedEntities
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                displayComparisonResults(data);
+                resultsSection.style.display = 'block';
+
+            } catch (error) {
+                console.error('Error generating comparison:', error);
+                alert('Failed to generate comparison. Please try again.');
+            } finally {
+                generateButton.textContent = 'Generate Comparison';
+                generateButton.disabled = selectedEntities.length < 2;
+            }
+        }
+
+        function displayComparisonResults(data) {
+            // Store data for view switching
+            comparisonData = data;
+            
+            // Update results header
+            document.getElementById('entities-compared').textContent = data.entities.length;
+            document.getElementById('games-analyzed').textContent = data.total_games_analyzed || 0;
+
+            // Generate chart based on current view
+            const activeView = document.querySelector('.view-btn.active').id;
+            if (activeView === 'multi-metric-btn') {
+                generateComparisonChart(data);
+            } else {
+                generateSingleMetricChart(data);
+            }
+
+            // Generate metrics table
+            generateMetricsTable(data);
+        }
+
+        // View Toggle Functions
+        function switchToMultiMetricView() {
+            // Update button states
+            document.getElementById('multi-metric-btn').classList.add('active');
+            document.getElementById('single-metric-btn').classList.remove('active');
+            
+            // Show/hide appropriate views
+            document.getElementById('multi-metric-view').style.display = 'block';
+            document.getElementById('single-metric-view').style.display = 'none';
+            document.getElementById('metric-selector').style.display = 'none';
+            
+            // Generate radar chart if we have data
+            if (comparisonData) {
+                generateComparisonChart(comparisonData);
+            }
+        }
+
+        function switchToSingleMetricView() {
+            // Update button states
+            document.getElementById('multi-metric-btn').classList.remove('active');
+            document.getElementById('single-metric-btn').classList.add('active');
+            
+            // Show/hide appropriate views
+            document.getElementById('multi-metric-view').style.display = 'none';
+            document.getElementById('single-metric-view').style.display = 'block';
+            document.getElementById('metric-selector').style.display = 'flex';
+            
+            // Generate single metric chart if we have data
+            if (comparisonData) {
+                generateSingleMetricChart(comparisonData);
+            }
+        }
+
+        function onMetricChange() {
+            if (comparisonData) {
+                generateSingleMetricChart(comparisonData);
+            }
+        }
+
+        function onMetricTypeChange() {
+            const metricType = document.getElementById('metric-type-selector').value;
+            const metricSelector = document.getElementById('selected-metric');
+            
+            // Update metric selector options based on type
+            if (metricType === 'per_action') {
+                // Rate-based metrics (behavioral percentages)
+                metricSelector.innerHTML = `
+                    <option value="win_rate">Win Rate (%)</option>
+                    <option value="success_rate">Success Rate (%)</option>
+                    <option value="attack_rate">Attack Preference (%)</option>
+                    <option value="message_rate">Messaging Preference (%)</option>
+                    <option value="card_trade_rate">Card Trading Preference (%)</option>
+                    <option value="fortification_rate">Fortification Preference (%)</option>
+                    <option value="army_placement_rate">Army Placement Preference (%)</option>
+                    <option value="avg_decision_time">Decision Time (s)</option>
+                `;
+            } else {
+                // Per-game metrics (raw counts)
+                metricSelector.innerHTML = `
+                    <option value="win_rate">Win Rate (%)</option>
+                    <option value="success_rate">Success Rate (%)</option>
+                    <option value="attacks_per_game">Attacks per Game</option>
+                    <option value="messages_per_game">Messages per Game</option>
+                    <option value="card_trades_per_game">Card Trades per Game</option>
+                    <option value="fortifications_per_game">Fortifications per Game</option>
+                    <option value="army_placements_per_game">Army Placements per Game</option>
+                    <option value="avg_decision_time">Decision Time (s)</option>
+                `;
+            }
+            
+            // Update table headers based on metric type
+            updateTableHeaders(metricType);
+            
+            // Regenerate charts and table if we have data
+            if (comparisonData) {
+                const activeView = document.querySelector('.view-btn.active').id;
+                if (activeView === 'multi-metric-btn') {
+                    generateComparisonChart(comparisonData);
+                } else {
+                    generateSingleMetricChart(comparisonData);
+                }
+                renderAnalyticsTable(comparisonData.processedData);
+            }
+        }
+
+        function updateTableHeaders(metricType) {
+            const table = document.getElementById('metrics-table');
+            const thead = table.querySelector('thead tr');
+            
+            if (metricType === 'per_action') {
+                // Rate-based metrics headers
+                thead.innerHTML = `
+                    <th class="sortable-header" data-column="name" onclick="handleAnalyticsSort('name')">Entity</th>
+                    <th class="sortable-header" data-column="games_played" onclick="handleAnalyticsSort('games_played')">Games</th>
+                    <th class="sortable-header" data-column="win_rate" onclick="handleAnalyticsSort('win_rate')">Win Rate (%)</th>
+                    <th class="sortable-header" data-column="success_rate" onclick="handleAnalyticsSort('success_rate')">Success Rate (%)</th>
+                    <th class="sortable-header" data-column="attack_rate" onclick="handleAnalyticsSort('attack_rate')">Attack Preference (%)</th>
+                    <th class="sortable-header" data-column="message_rate" onclick="handleAnalyticsSort('message_rate')">Message Preference (%)</th>
+                    <th class="sortable-header" data-column="avg_decision_time" onclick="handleAnalyticsSort('avg_decision_time')">Decision Time (s)</th>
+                `;
+            } else {
+                // Per-game metrics headers
+                thead.innerHTML = `
+                    <th class="sortable-header" data-column="name" onclick="handleAnalyticsSort('name')">Entity</th>
+                    <th class="sortable-header" data-column="games_played" onclick="handleAnalyticsSort('games_played')">Games</th>
+                    <th class="sortable-header" data-column="win_rate" onclick="handleAnalyticsSort('win_rate')">Win Rate (%)</th>
+                    <th class="sortable-header" data-column="success_rate" onclick="handleAnalyticsSort('success_rate')">Success Rate (%)</th>
+                    <th class="sortable-header" data-column="attacks_per_game" onclick="handleAnalyticsSort('attacks_per_game')">Attacks/Game</th>
+                    <th class="sortable-header" data-column="messages_per_game" onclick="handleAnalyticsSort('messages_per_game')">Messages/Game</th>
+                    <th class="sortable-header" data-column="avg_decision_time" onclick="handleAnalyticsSort('avg_decision_time')">Decision Time (s)</th>
+                `;
+            }
+        }
+
+        function generateSingleMetricChart(data) {
+            const ctx = document.getElementById('single-metric-chart').getContext('2d');
+            const selectedMetric = document.getElementById('selected-metric').value;
+            
+            // Destroy existing chart if it exists
+            if (singleMetricChart) {
+                singleMetricChart.destroy();
+            }
+
+            // Prepare data for the selected metric
+            const rawChartData = data.data.map(entity => ({
+                name: entity.name.trim(), // Normalize names by trimming whitespace
+                value: entity[selectedMetric].mean,
+                ci_lower: entity[selectedMetric].ci_lower,
+                ci_upper: entity[selectedMetric].ci_upper,
+                games_played: entity.games_played
+            }));
+
+            // Sort by value descending
+            const chartData = rawChartData.sort((a, b) => b.value - a.value);
+
+            // Color coding based on performance
+            const colors = chartData.map((_, index) => {
+                if (index === 0) return 'rgba(255, 215, 0, 0.8)'; // Gold for #1
+                if (index === 1) return 'rgba(192, 192, 192, 0.8)'; // Silver for #2
+                if (index === 2) return 'rgba(205, 127, 50, 0.8)'; // Bronze for #3
+                return 'rgba(102, 126, 234, 0.8)'; // Default purple
+            });
+
+            const borderColors = colors.map(color => color.replace('0.8', '1'));
+
+            // Get metric label
+            const metricLabels = {
+                'win_rate': 'Win Rate (%)',
+                'success_rate': 'Success Rate (%)',
+                'attacks_per_game': 'Attacks per Game',
+                'messages_per_game': 'Messages per Game',
+                'card_trades_per_game': 'Card Trades per Game',
+                'fortifications_per_game': 'Fortifications per Game',
+                'army_placements_per_game': 'Army Placements per Game',
+                'avg_decision_time': 'Decision Time (seconds)'
+            };
+
+            const metricLabel = metricLabels[selectedMetric] || selectedMetric;
+
+            // Create chart labels (these will be in sorted order)
+            const chartLabels = chartData.map(item => item.name);
+
+            // Create datasets with confidence intervals
+            const datasets = [
+                // Main bars with means
+                {
+                    label: metricLabel,
+                    data: chartData.map(item => item.value),
+                    backgroundColor: colors,
+                    borderColor: borderColors,
+                    borderWidth: 2
+                },
+                // Confidence interval dataset
+                {
+                    label: '95% Confidence Interval',
+                    data: chartData.map(item => ({
+                        y: item.name,
+                        x: item.value,
+                        xMin: item.ci_lower,
+                        xMax: item.ci_upper
+                    })),
+                    type: 'scatter',
+                    pointRadius: 0,
+                    showLine: false,
+                    backgroundColor: 'transparent',
+                    borderColor: 'rgba(0, 0, 0, 0.6)',
+                    borderWidth: 2,
+                    pointBorderWidth: 0,
+                    pointBackgroundColor: 'transparent'
+                }
+            ];
+
+            singleMetricChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: chartLabels,
+                    datasets: datasets
+                },
+                options: {
+                    indexAxis: 'y', // Horizontal bars
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: `${data.comparison_type === 'characters' ? 'Character' : 'AI Model'} Comparison: ${metricLabel}`,
+                            font: {
+                                size: 16,
+                                weight: 'bold'
+                            }
+                        },
+                        legend: {
+                            display: true,
+                            position: 'bottom',
+                            labels: {
+                                filter: function(legendItem, chartData) {
+                                    // Only show the main dataset in legend
+                                    return legendItem.datasetIndex === 0;
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    if (context.datasetIndex === 0) {
+                                        const dataPoint = chartData[context.dataIndex];
+                                        return [
+                                            `${metricLabel}: ${dataPoint.value}`,
+                                            `95% CI: ${dataPoint.ci_lower} - ${dataPoint.ci_upper}`,
+                                            `Games: ${dataPoint.games_played}`
+                                        ];
+                                    }
+                                    return null;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: metricLabel
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: data.comparison_type === 'characters' ? 'Characters' : 'AI Models'
+                            },
+                            grid: {
+                                display: false
+                            }
+                        }
+                    },
+                    layout: {
+                        padding: {
+                            right: 20
+                        }
+                    }
+                }
+            });
+
+            // Store error bar data in the format the plugin expects
+            // Create a mapping from chart position to error bar data
+            singleMetricChart.errorBarData = chartData.map((dataPoint, index) => ({
+                ...dataPoint,
+                chartIndex: index // Store the actual chart position
+            }));
+            
+            // Store the chart labels for debugging
+            singleMetricChart.chartLabels = chartLabels;
+            
+            // Add a small delay to ensure chart is fully rendered before drawing error bars
+            setTimeout(() => {
+                if (singleMetricChart && singleMetricChart.errorBarData) {
+                    singleMetricChart.update('none');
+                }
+            }, 50);
+        }
+
+        // Error bar plugin for Chart.js
+        const errorBarPlugin = {
+            id: 'errorBars',
+            afterDatasetsDraw: function(chart, args, options) {
+                if (!chart.errorBarData || !Array.isArray(chart.errorBarData)) {
+                    console.log('No error bar data available');
+                    return;
+                }
+                
+                const ctx = chart.ctx;
+                const chartData = chart.errorBarData;
+                const meta = chart.getDatasetMeta(0);
+                const chartArea = chart.chartArea;
+                
+                if (!meta || !meta.data || meta.data.length === 0) {
+                    console.log('No chart meta data available');
+                    return;
+                }
+                
+                // Since our data is now stored with chartIndex, we can directly map
+                chartData.forEach((dataPoint, arrayIndex) => {
+                    // Use the direct array index since data is already sorted to match chart order
+                    const barIndex = dataPoint.chartIndex !== undefined ? dataPoint.chartIndex : arrayIndex;
+                    
+                    if (barIndex >= meta.data.length) {
+                        console.log(`Bar index ${barIndex} exceeds available bars (${meta.data.length})`);
+                        return;
+                    }
+                    
+                    const bar = meta.data[barIndex];
+                    
+                    if (!bar || dataPoint.ci_lower === undefined || dataPoint.ci_upper === undefined) {
+                        console.log(`Missing data for ${dataPoint.name}: bar=${!!bar}, ci_lower=${dataPoint.ci_lower}, ci_upper=${dataPoint.ci_upper}`);
+                        return;
+                    }
+                    
+                    // Validate that confidence intervals are reasonable
+                    if (isNaN(dataPoint.ci_lower) || isNaN(dataPoint.ci_upper) || isNaN(dataPoint.value)) {
+                        console.log(`Invalid numeric values for ${dataPoint.name}`);
+                        return;
+                    }
+                    
+                    const xScale = chart.scales.x;
+                    if (!xScale) {
+                        console.log('No x scale available');
+                        return;
+                    }
+                    
+                    // Calculate positions
+                    const yPos = bar.y;
+                    const xLower = xScale.getPixelForValue(dataPoint.ci_lower);
+                    const xUpper = xScale.getPixelForValue(dataPoint.ci_upper);
+                    const xMean = xScale.getPixelForValue(dataPoint.value);
+                    
+                    // More lenient validation - allow error bars to extend slightly outside
+                    if (yPos < chartArea.top - 10 || yPos > chartArea.bottom + 10) {
+                        console.log(`Y position ${yPos} outside chart area for ${dataPoint.name}`);
+                        return;
+                    }
+                    
+                    // Clamp x positions to chart area if they extend outside
+                    const clampedXLower = Math.max(chartArea.left, Math.min(chartArea.right, xLower));
+                    const clampedXUpper = Math.max(chartArea.left, Math.min(chartArea.right, xUpper));
+                    const clampedXMean = Math.max(chartArea.left, Math.min(chartArea.right, xMean));
+                    
+                    // Draw error bar
+                    ctx.save();
+                    ctx.strokeStyle = 'rgba(0, 0, 0, 0.8)';
+                    ctx.lineWidth = 2;
+                    ctx.lineCap = 'round';
+                    
+                    // Main horizontal line for CI range
+                    ctx.beginPath();
+                    ctx.moveTo(clampedXLower, yPos);
+                    ctx.lineTo(clampedXUpper, yPos);
+                    ctx.stroke();
+                    
+                    // Left cap (vertical line) - only if not clamped
+                    if (xLower >= chartArea.left) {
+                        ctx.beginPath();
+                        ctx.moveTo(clampedXLower, yPos - 3);
+                        ctx.lineTo(clampedXLower, yPos + 3);
+                        ctx.stroke();
+                    }
+                    
+                    // Right cap (vertical line) - only if not clamped
+                    if (xUpper <= chartArea.right) {
+                        ctx.beginPath();
+                        ctx.moveTo(clampedXUpper, yPos - 3);
+                        ctx.lineTo(clampedXUpper, yPos + 3);
+                        ctx.stroke();
+                    }
+                    
+                    // Add a small dot at the mean value for clarity
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+                    ctx.beginPath();
+                    ctx.arc(clampedXMean, yPos, 1.5, 0, 2 * Math.PI);
+                    ctx.fill();
+                    
+                    ctx.restore();
+                });
+            }
+        };
+
+        // Register the plugin
+        Chart.register(errorBarPlugin);
+
+        function generateComparisonChart(data) {
+            const ctx = document.getElementById('comparison-chart').getContext('2d');
+            const metricType = document.getElementById('metric-type-selector').value;
+            
+            // Destroy existing chart if it exists
+            if (analyticsChart) {
+                analyticsChart.destroy();
+            }
+
+            const colors = [
+                'rgba(255, 99, 132, 0.8)',
+                'rgba(54, 162, 235, 0.8)',
+                'rgba(255, 206, 86, 0.8)',
+                'rgba(75, 192, 192, 0.8)',
+                'rgba(153, 102, 255, 0.8)',
+                'rgba(255, 159, 64, 0.8)'
+            ];
+
+            const datasets = [];
+
+            // Choose metrics and labels based on metric type
+            let metricNames, chartLabels;
+            
+            if (metricType === 'per_action') {
+                // Rate-based metrics (behavioral percentages)
+                metricNames = [
+                    'win_rate', 'success_rate', 'attack_rate', 
+                    'message_rate', 'card_trade_rate', 
+                    'fortification_rate', 'army_placement_rate'
+                ];
+                chartLabels = [
+                    'Win Rate (%)',
+                    'Success Rate (%)',
+                    'Attack Preference (%)',
+                    'Message Preference (%)',
+                    'Card Trade Preference (%)',
+                    'Fortification Preference (%)',
+                    'Army Placement Preference (%)'
+                ];
+            } else {
+                // Per-game metrics (raw counts)
+                metricNames = [
+                    'win_rate', 'success_rate', 'attacks_per_game', 
+                    'messages_per_game', 'card_trades_per_game', 
+                    'fortifications_per_game', 'army_placements_per_game'
+                ];
+                chartLabels = [
+                    'Win Rate (%)',
+                    'Success Rate (%)',
+                    'Attacks/Game',
+                    'Messages/Game',
+                    'Card Trades/Game',
+                    'Fortifications/Game',
+                    'Army Placements/Game'
+                ];
+            }
+
+            // Add confidence interval datasets (semi-transparent filled areas)
+            data.data.forEach((entity, index) => {
+                const color = colors[index % colors.length];
+                const transparentColor = color.replace('0.8', '0.2');
+                
+                // Upper bound of confidence intervals
+                datasets.push({
+                    label: `${entity.name} (CI Upper)`,
+                    data: metricNames.map(metricName => entity[metricName]?.ci_upper || 0),
+                    backgroundColor: transparentColor,
+                    borderColor: 'transparent',
+                    borderWidth: 0,
+                    fill: '+1', // Fill to the lower bound dataset
+                    pointRadius: 0,
+                    pointHoverRadius: 0
+                });
+
+                // Lower bound of confidence intervals
+                datasets.push({
+                    label: `${entity.name} (CI Lower)`,
+                    data: metricNames.map(metricName => entity[metricName]?.ci_lower || 0),
+                    backgroundColor: 'transparent',
+                    borderColor: 'transparent',
+                    borderWidth: 0,
+                    fill: false,
+                    pointRadius: 0,
+                    pointHoverRadius: 0
+                });
+
+                // Mean values (main line)
+                datasets.push({
+                    label: entity.name,
+                    data: metricNames.map(metricName => entity[metricName]?.mean || 0),
+                    backgroundColor: color,
+                    borderColor: color.replace('0.8', '1'),
+                    borderWidth: 3,
+                    fill: false,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    pointBackgroundColor: color.replace('0.8', '1'),
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2
+                });
+            });
+
+            const chartTitle = metricType === 'per_action' 
+                ? `${data.comparison_type === 'characters' ? 'Character' : 'AI Model'} Behavioral Preferences with 95% CI`
+                : `${data.comparison_type === 'characters' ? 'Character' : 'AI Model'} Performance Comparison with 95% CI`;
+
+            analyticsChart = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: chartLabels,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: chartTitle,
+                            font: {
+                                size: 16,
+                                weight: 'bold'
+                            }
+                        },
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                filter: function(legendItem, chartData) {
+                                    // Only show main datasets (mean values) in legend
+                                    return !legendItem.text.includes('CI');
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const datasetLabel = context.dataset.label;
+                                    if (datasetLabel.includes('CI')) {
+                                        return null; // Don't show tooltips for CI datasets
+                                    }
+                                    
+                                    const entityName = datasetLabel;
+                                    const entity = data.data.find(e => e.name === entityName);
+                                    if (!entity) return null;
+                                    
+                                    const metricIndex = context.dataIndex;
+                                    const metricName = metricNames[metricIndex];
+                                    const metric = entity[metricName];
+                                    
+                                    if (!metric) return null;
+                                    
+                                    const unit = metricType === 'per_action' || metricName.includes('rate') ? '%' : 
+                                                metricName === 'avg_decision_time' ? 's' : '';
+                                    
+                                    return [
+                                        `${entityName}: ${metric.mean}${unit}`,
+                                        `95% CI: ${metric.ci_lower}${unit} - ${metric.ci_upper}${unit}`,
+                                        `Games: ${entity.games_played}`
+                                    ];
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            },
+                            angleLines: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            },
+                            pointLabels: {
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        }
+                    },
+                    interaction: {
+                        intersect: false
+                    }
+                }
+            });
+        }
+
+        function generateMetricsTable(data) {
+            const tbody = document.getElementById('metrics-table-body');
+            
+            // Store data for sorting (apply rounding here)
+            const roundedData = data.data.map(entity => ({
+                ...entity,
+                win_rate: {
+                    mean: roundPercent(entity.win_rate.mean),
+                    ci_lower: roundPercent(entity.win_rate.ci_lower),
+                    ci_upper: roundPercent(entity.win_rate.ci_upper)
+                },
+                success_rate: {
+                    mean: roundPercent(entity.success_rate.mean),
+                    ci_lower: roundPercent(entity.success_rate.ci_lower),
+                    ci_upper: roundPercent(entity.success_rate.ci_upper)
+                },
+                attacks_per_game: {
+                    mean: roundMetric(entity.attacks_per_game.mean),
+                    ci_lower: roundMetric(entity.attacks_per_game.ci_lower),
+                    ci_upper: roundMetric(entity.attacks_per_game.ci_upper)
+                },
+                messages_per_game: {
+                    mean: roundMetric(entity.messages_per_game.mean),
+                    ci_lower: roundMetric(entity.messages_per_game.ci_lower),
+                    ci_upper: roundMetric(entity.messages_per_game.ci_upper)
+                },
+                avg_decision_time: {
+                    mean: roundTime(entity.avg_decision_time.mean),
+                    ci_lower: roundTime(entity.avg_decision_time.ci_lower),
+                    ci_upper: roundTime(entity.avg_decision_time.ci_upper)
+                },
+                // Rate-based metrics (behavioral percentages)
+                attack_rate: {
+                    mean: roundPercent(entity.attack_rate?.mean || 0),
+                    ci_lower: roundPercent(entity.attack_rate?.ci_lower || 0),
+                    ci_upper: roundPercent(entity.attack_rate?.ci_upper || 0)
+                },
+                message_rate: {
+                    mean: roundPercent(entity.message_rate?.mean || 0),
+                    ci_lower: roundPercent(entity.message_rate?.ci_lower || 0),
+                    ci_upper: roundPercent(entity.message_rate?.ci_upper || 0)
+                },
+                card_trade_rate: {
+                    mean: roundPercent(entity.card_trade_rate?.mean || 0),
+                    ci_lower: roundPercent(entity.card_trade_rate?.ci_lower || 0),
+                    ci_upper: roundPercent(entity.card_trade_rate?.ci_upper || 0)
+                },
+                fortification_rate: {
+                    mean: roundPercent(entity.fortification_rate?.mean || 0),
+                    ci_lower: roundPercent(entity.fortification_rate?.ci_lower || 0),
+                    ci_upper: roundPercent(entity.fortification_rate?.ci_upper || 0)
+                },
+                army_placement_rate: {
+                    mean: roundPercent(entity.army_placement_rate?.mean || 0),
+                    ci_lower: roundPercent(entity.army_placement_rate?.ci_lower || 0),
+                    ci_upper: roundPercent(entity.army_placement_rate?.ci_upper || 0)
+                }
+            }));
+            
+            // Store for sorting functionality
+            comparisonData.processedData = roundedData;
+            
+            renderAnalyticsTable(roundedData);
+        }
+
+        function renderAnalyticsTable(data) {
+            const tbody = document.getElementById('metrics-table-body');
+            const metricType = document.getElementById('metric-type-selector').value;
+            
+            if (metricType === 'per_action') {
+                // Rate-based metrics table
+                tbody.innerHTML = data.map(entity => `
+                    <tr>
+                        <td><strong>${escapeHtml(entity.name)}</strong></td>
+                        <td>${entity.games_played}</td>
+                        <td>
+                            <strong>${entity.win_rate.mean}%</strong><br>
+                            <span class="confidence-interval">(${entity.win_rate.ci_lower}% - ${entity.win_rate.ci_upper}%)</span>
+                        </td>
+                        <td>
+                            <strong>${entity.success_rate.mean}%</strong><br>
+                            <span class="confidence-interval">(${entity.success_rate.ci_lower}% - ${entity.success_rate.ci_upper}%)</span>
+                        </td>
+                        <td>
+                            <strong>${entity.attack_rate.mean}%</strong><br>
+                            <span class="confidence-interval">(${entity.attack_rate.ci_lower}% - ${entity.attack_rate.ci_upper}%)</span>
+                        </td>
+                        <td>
+                            <strong>${entity.message_rate.mean}%</strong><br>
+                            <span class="confidence-interval">(${entity.message_rate.ci_lower}% - ${entity.message_rate.ci_upper}%)</span>
+                        </td>
+                        <td>
+                            <strong>${entity.avg_decision_time.mean}s</strong><br>
+                            <span class="confidence-interval">(${entity.avg_decision_time.ci_lower} - ${entity.avg_decision_time.ci_upper})</span>
+                        </td>
+                    </tr>
+                `).join('');
+            } else {
+                // Per-game metrics table
+                tbody.innerHTML = data.map(entity => `
+                    <tr>
+                        <td><strong>${escapeHtml(entity.name)}</strong></td>
+                        <td>${entity.games_played}</td>
+                        <td>
+                            <strong>${entity.win_rate.mean}%</strong><br>
+                            <span class="confidence-interval">(${entity.win_rate.ci_lower}% - ${entity.win_rate.ci_upper}%)</span>
+                        </td>
+                        <td>
+                            <strong>${entity.success_rate.mean}%</strong><br>
+                            <span class="confidence-interval">(${entity.success_rate.ci_lower}% - ${entity.success_rate.ci_upper}%)</span>
+                        </td>
+                        <td>
+                            <strong>${entity.attacks_per_game.mean}</strong><br>
+                            <span class="confidence-interval">(${entity.attacks_per_game.ci_lower} - ${entity.attacks_per_game.ci_upper})</span>
+                        </td>
+                        <td>
+                            <strong>${entity.messages_per_game.mean}</strong><br>
+                            <span class="confidence-interval">(${entity.messages_per_game.ci_lower} - ${entity.messages_per_game.ci_upper})</span>
+                        </td>
+                        <td>
+                            <strong>${entity.avg_decision_time.mean}s</strong><br>
+                            <span class="confidence-interval">(${entity.avg_decision_time.ci_lower} - ${entity.avg_decision_time.ci_upper})</span>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+            
+            // Update sort indicators
+            updateAnalyticsSortIndicators();
+        }
+
+        function handleAnalyticsSort(column) {
+            if (!comparisonData || !comparisonData.processedData) return;
+            
+            // Toggle direction if same column, otherwise reset to desc
+            if (analyticsSortConfig.column === column) {
+                analyticsSortConfig.direction = analyticsSortConfig.direction === 'desc' ? 'asc' : 'desc';
+            } else {
+                analyticsSortConfig.column = column;
+                analyticsSortConfig.direction = 'desc';
+            }
+            
+            // Sort the data
+            const sortedData = sortAnalyticsData(comparisonData.processedData, column, analyticsSortConfig.direction);
+            
+            // Re-render the table
+            renderAnalyticsTable(sortedData);
+        }
+
+        function sortAnalyticsData(data, column, direction) {
+            return [...data].sort((a, b) => {
+                let aVal, bVal;
+                
+                // Handle different column types
+                if (column === 'name') {
+                    aVal = a.name.toLowerCase();
+                    bVal = b.name.toLowerCase();
+                } else if (column === 'games_played') {
+                    aVal = a.games_played;
+                    bVal = b.games_played;
+                } else {
+                    // For metric columns, sort by mean value
+                    aVal = a[column].mean;
+                    bVal = b[column].mean;
+                }
+                
+                if (direction === 'asc') {
+                    return aVal > bVal ? 1 : -1;
+                } else {
+                    return aVal < bVal ? 1 : -1;
+                }
+            });
+        }
+
+        function updateAnalyticsSortIndicators() {
+            // Remove all existing sort classes
+            document.querySelectorAll('#metrics-table .sortable-header').forEach(header => {
+                header.classList.remove('sort-asc', 'sort-desc');
+            });
+            
+            // Add appropriate sort class to active column
+            const activeHeader = document.querySelector(`#metrics-table .sortable-header[data-column="${analyticsSortConfig.column}"]`);
+            if (activeHeader) {
+                activeHeader.classList.add(analyticsSortConfig.direction === 'asc' ? 'sort-asc' : 'sort-desc');
+            }
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', () => {
+            // Load initial data
+            loadLeaderboards();
+            
+            // Set up auto-refresh every 30 seconds
+            refreshInterval = setInterval(loadLeaderboards, 30000);
+
+            // Set up analytics event listeners
+            document.getElementById('analytics-toggle').addEventListener('click', toggleAnalytics);
+
+            // Show analytics by default
+            toggleAnalytics();
+            document.getElementById('comparison-type').addEventListener('change', onComparisonTypeChange);
+            document.getElementById('generate-comparison').addEventListener('click', generateComparison);
+            
+            // Quick action buttons
+            document.getElementById('select-all-btn').addEventListener('click', selectAllEntities);
+            document.getElementById('clear-all-btn').addEventListener('click', clearAllEntities);
+            document.getElementById('select-top-btn').addEventListener('click', selectTopPerformers);
+            
+            // View toggle buttons
+            document.getElementById('multi-metric-btn').addEventListener('click', switchToMultiMetricView);
+            document.getElementById('single-metric-btn').addEventListener('click', switchToSingleMetricView);
+            document.getElementById('selected-metric').addEventListener('change', onMetricChange);
+            
+            // Metric type toggle
+            document.getElementById('metric-type-selector').addEventListener('change', onMetricTypeChange);
+        });
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
+            }
+            if (analyticsChart) {
+                analyticsChart.destroy();
+            }
+        });
+
+        function showShareModal(type) {
+            const modal = document.getElementById('share-modal');
+            const title = document.getElementById('modal-title');
+            const directLink = document.getElementById('direct-link');
+            const embedCode = document.getElementById('embed-code');
+            const baseUrl = window.location.origin;
+
+            if (type === 'character') {
+                title.innerText = 'Share Character Leaderboard';
+                directLink.value = `${baseUrl}/embed_characters.html`;
+                embedCode.value = `<iframe src="${baseUrl}/embed_characters.html" width="800" height="500" style="border:none;"></iframe>`;
+            } else {
+                title.innerText = 'Share AI Model Leaderboard';
+                directLink.value = `${baseUrl}/embed_models.html`;
+                embedCode.value = `<iframe src="${baseUrl}/embed_models.html" width="800" height="500" style="border:none;"></iframe>`;
+            }
+
+            modal.style.display = 'block';
+        }
+
+        function closeShareModal() {
+            document.getElementById('share-modal').style.display = 'none';
+        }
+
+        function copyToClipboard(elementId) {
+            const input = document.getElementById(elementId);
+            input.select();
+            document.execCommand('copy');
+            alert('Copied to clipboard!');
+        }
+
+        window.onclick = function(event) {
+            const modal = document.getElementById('share-modal');
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        }
+    </script>
+</body>
+</html>

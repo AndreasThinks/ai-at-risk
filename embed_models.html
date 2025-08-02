@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Model Leaderboard</title>
+    <style>
+        body { font-family: sans-serif; background-color: #fff; margin: 1em; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 8px 12px; border: 1px solid #ddd; text-align: left; }
+        th { background-color: #f4f4f4; }
+    </style>
+</head>
+<body>
+    <div id="model-leaderboard"></div>
+    <script>
+        async function fetchLeaderboard() {
+            try {
+                const response = await fetch('/api/leaderboard/models');
+                const data = await response.json();
+                const leaderboardDiv = document.getElementById('model-leaderboard');
+                
+                let table = '<table><thead><tr><th>Rank</th><th>Model</th><th>Games</th><th>Win Rate</th><th>Success Rate</th></tr></thead><tbody>';
+                data.models.forEach((model, index) => {
+                    table += `<tr><td>${index + 1}</td><td>${model.model_name}</td><td>${model.games_played}</td><td>${model.win_rate}%</td><td>${model.success_rate}%</td></tr>`;
+                });
+                table += '</tbody></table>';
+                leaderboardDiv.innerHTML = table;
+            } catch (error) {
+                console.error('Error fetching leaderboard:', error);
+                document.getElementById('model-leaderboard').innerHTML = '<p>Error loading leaderboard.</p>';
+            }
+        }
+
+        setInterval(fetchLeaderboard, 30000);
+        fetchLeaderboard();
+    </script>
+</body>
+</html>

@@ -1,0 +1,1711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI at Risk - Briefing Mode</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: #333;
+            height: 100vh;
+            overflow: hidden;
+            padding: 10px;
+        }
+
+        .briefing-container {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 15px;
+            height: 100vh;
+            max-height: 100vh;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-rows: auto 1fr 1fr 1fr auto;
+            gap: 10px;
+            overflow: hidden;
+        }
+
+        .header {
+            text-align: center;
+            padding: 10px 0;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+        }
+
+        .header h1 {
+            color: white;
+            font-size: 1.8em;
+            font-weight: 300;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            margin-bottom: 5px;
+        }
+
+        .header .subtitle {
+            color: rgba(255,255,255,0.8);
+            font-size: 0.9em;
+            font-weight: 300;
+        }
+
+        .row-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            overflow: hidden;
+        }
+
+        .card {
+            background: rgba(255,255,255,0.95);
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card.compact {
+            flex: 0 1 auto;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #f0f0f0;
+            flex-shrink: 0;
+        }
+
+        .card-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            font-size: 1.2em;
+            color: white;
+        }
+
+        .card-title {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #2c3e50;
+            flex: 1;
+        }
+
+        .card-content {
+            flex: 1;
+            overflow-y: auto;
+            font-size: 0.85em;
+        }
+
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #27ae60;
+            animation: pulse 2s infinite;
+        }
+
+        .status-indicator.thinking {
+            background: #f39c12;
+            animation: thinking-pulse 1s infinite;
+        }
+
+        .status-indicator.waiting {
+            background: #95a5a6;
+            animation: none;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        @keyframes thinking-pulse {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.2); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        .game-status .card-icon { background: linear-gradient(45deg, #3498db, #2980b9); }
+        .players .card-icon { background: linear-gradient(45deg, #9b59b6, #8e44ad); }
+        .map .card-icon { background: linear-gradient(45deg, #27ae60, #2ecc71); }
+        .decision .card-icon { background: linear-gradient(45deg, #e74c3c, #c0392b); }
+        .messages .card-icon { background: linear-gradient(45deg, #f39c12, #e67e22); }
+        .strategies .card-icon { background: linear-gradient(45deg, #1abc9c, #16a085); }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+            border-bottom: 1px solid #ecf0f1;
+            font-size: 0.8em;
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #34495e;
+        }
+
+        .info-value {
+            color: #2c3e50;
+            font-weight: 500;
+        }
+
+        .highlight {
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+
+        .phase-indicator {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.7em;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .phase-setup { background: #3498db; color: white; }
+        .phase-reinforcement { background: #27ae60; color: white; }
+        .phase-attack { background: #e74c3c; color: white; }
+        .phase-fortify { background: #f39c12; color: white; }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #ecf0f1;
+            border-radius: 3px;
+            overflow: hidden;
+            margin: 4px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(45deg, #27ae60, #2ecc71);
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+
+        .player-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+            border-bottom: 1px solid #ecf0f1;
+            font-size: 0.8em;
+        }
+
+        .player-item:last-child {
+            border-bottom: none;
+        }
+
+        .player-name {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .player-stats {
+            display: flex;
+            gap: 8px;
+            font-size: 0.75em;
+            color: #666;
+        }
+
+        .turn-timer {
+            display: inline-block;
+            background: #f39c12;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 8px;
+            font-size: 0.7em;
+            font-weight: 600;
+            margin-left: 5px;
+        }
+
+        .threat-indicator {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            margin-left: 3px;
+        }
+
+        .threat-high { background: #e74c3c; }
+        .threat-medium { background: #f39c12; }
+        .threat-low { background: #27ae60; }
+
+        .decision-box {
+            background: #f8f9fa;
+            border-left: 3px solid #e74c3c;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 8px 0;
+            font-size: 0.8em;
+        }
+
+        .decision-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+            font-size: 0.75em;
+            color: #666;
+        }
+
+        .decision-reasoning {
+            font-style: italic;
+            line-height: 1.4;
+            color: #2c3e50;
+            max-height: 300px;
+            overflow-y: auto;
+            word-wrap: break-word;
+        }
+
+        .message-item {
+            background: #f8f9fa;
+            border-radius: 5px;
+            padding: 8px;
+            margin: 6px 0;
+            border-left: 3px solid #f39c12;
+            font-size: 0.8em;
+        }
+
+        .message-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+            font-size: 0.75em;
+        }
+
+        .message-from {
+            font-weight: 600;
+            color: #e67e22;
+        }
+
+        .message-time {
+            color: #666;
+        }
+
+        .message-content {
+            color: #2c3e50;
+            line-height: 1.3;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+        }
+
+        .strategy-item {
+            margin-bottom: 8px;
+            padding: 6px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            font-size: 0.75em;
+        }
+
+        .strategy-player-name {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 4px;
+        }
+
+        .strategy-content {
+            color: #666;
+            font-style: italic;
+            line-height: 1.3;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+        }
+
+        /* Activity Log Sidebar */
+        .activity-sidebar {
+            background: rgba(255,255,255,0.95);
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .activity-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #f0f0f0;
+            flex-shrink: 0;
+        }
+
+        .activity-title {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #2c3e50;
+            flex: 1;
+        }
+
+        .activity-content {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .activity-item {
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 0.8em;
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .activity-timestamp {
+            color: #666;
+            font-size: 0.7em;
+            margin-bottom: 2px;
+        }
+
+        .activity-player {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 2px;
+        }
+
+        .activity-action {
+            color: #666;
+            line-height: 1.3;
+        }
+
+        .activity-type-action {
+            color: #e74c3c;
+            font-weight: 600;
+        }
+
+        .activity-type-decision {
+            color: #9b59b6;
+            font-weight: 600;
+        }
+
+        .activity-type-message {
+            color: #f39c12;
+            font-weight: 600;
+        }
+
+        /* Compact Risk Map */
+        .risk-map-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #e0e0e0;
+        }
+
+        .risk-map-svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .territory {
+            stroke: #2c3e50;
+            stroke-width: 1;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .territory:hover {
+            stroke: #3498db;
+            stroke-width: 2;
+            filter: brightness(1.1);
+        }
+
+        .territory.current-player {
+            stroke: #f39c12;
+            stroke-width: 2;
+            animation: territory-pulse 2s infinite;
+        }
+
+        @keyframes territory-pulse {
+            0%, 100% { stroke-opacity: 1; }
+            50% { stroke-opacity: 0.6; }
+        }
+
+        .territory-label {
+            font-family: 'Segoe UI', sans-serif;
+            font-size: 8px;
+            font-weight: 600;
+            text-anchor: middle;
+            pointer-events: none;
+            fill: #2c3e50;
+            text-shadow: 1px 1px 2px rgba(255,255,255,0.8);
+        }
+
+        .army-count {
+            font-family: 'Segoe UI', sans-serif;
+            font-size: 10px;
+            font-weight: 700;
+            text-anchor: middle;
+            pointer-events: none;
+            fill: #2c3e50;
+            text-shadow: 1px 1px 2px rgba(255,255,255,0.9);
+        }
+
+        .continent-background {
+            opacity: 0.1;
+            pointer-events: none;
+        }
+
+        .map-legend {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(255,255,255,0.95);
+            border-radius: 5px;
+            padding: 5px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            font-size: 0.7em;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 3px;
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+            margin-right: 5px;
+            border: 1px solid #ccc;
+        }
+
+        .map-tooltip {
+            position: absolute;
+            background: rgba(0,0,0,0.9);
+            color: white;
+            padding: 5px 8px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            pointer-events: none;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            max-width: 150px;
+        }
+
+        .map-tooltip.visible {
+            opacity: 1;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-style: italic;
+            font-size: 0.9em;
+        }
+
+        .error {
+            background: #e74c3c;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 5px 0;
+            font-size: 0.8em;
+        }
+
+        .last-updated {
+            text-align: center;
+            color: rgba(255,255,255,0.7);
+            font-size: 0.8em;
+            padding: 5px 0;
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 1600px) {
+            .briefing-container {
+                grid-template-columns: 1fr 300px;
+            }
+            
+            .card {
+                padding: 12px;
+            }
+            
+            .card-title {
+                font-size: 1em;
+            }
+        }
+
+        @media (max-width: 1200px) {
+            .briefing-container {
+                grid-template-columns: 1fr 250px;
+            }
+            
+            .activity-sidebar {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="briefing-container">
+        <div class="main-content">
+            <div class="header">
+                <h1>🎲 AI at Risk - Briefing Mode</h1>
+                <div class="subtitle">Real-time AI Agent Battle Monitor</div>
+                <div style="margin-top: 10px;">
+                    <button onclick="switchToStandardMode()" style="
+                        background: linear-gradient(45deg, #e74c3c, #c0392b);
+                        color: white;
+                        border: none;
+                        padding: 8px 16px;
+                        border-radius: 20px;
+                        cursor: pointer;
+                        font-size: 0.9em;
+                        font-weight: 500;
+                        transition: transform 0.2s ease;
+                        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+                    " onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='translateY(0)'">
+                        📋 Switch to Standard Mode
+                    </button>
+                </div>
+            </div>
+
+            <div class="row-section">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon">🎮</div>
+                        <div class="card-title">Game Status</div>
+                        <div class="status-indicator"></div>
+                    </div>
+                    <div class="card-content" id="game-status-content">
+                        <div class="loading">Loading game status...</div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon">👥</div>
+                        <div class="card-title">Players</div>
+                    </div>
+                    <div class="card-content" id="players-content">
+                        <div class="loading">Loading players...</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row-section">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon">🗺️</div>
+                        <div class="card-title">Risk World Map</div>
+                    </div>
+                    <div class="card-content" id="risk-map-content">
+                        <div class="loading">Loading world map...</div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon">🧠</div>
+                        <div class="card-title">Latest Decision</div>
+                    </div>
+                    <div class="card-content" id="decision-content">
+                        <div class="loading">Loading latest decision...</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row-section">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon">💬</div>
+                        <div class="card-title">Recent Messages</div>
+                    </div>
+                    <div class="card-content" id="messages-content">
+                        <div class="loading">Loading messages...</div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon">🎯</div>
+                        <div class="card-title">Player Strategies</div>
+                    </div>
+                    <div class="card-content" id="strategies-content">
+                        <div class="loading">Loading strategies...</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="last-updated" id="last-updated">
+                Last updated: Never
+            </div>
+        </div>
+
+        <div class="activity-sidebar">
+            <div class="activity-header">
+                <div class="activity-title">🔥 Live Activity Log</div>
+            </div>
+            <div class="activity-content" id="activity-content">
+                <div class="loading">Loading activity...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration - will be loaded dynamically
+        let API_CONFIG = null;
+        let currentGameId = null;
+        let updateInterval = null;
+
+        // Enhanced API base getter with validation and fallbacks
+        async function getApiBase() {
+            if (!API_CONFIG) {
+                await loadApiConfig();
+            }
+            
+            // Double-check the API base is valid
+            if (!API_CONFIG.apiBase || API_CONFIG.apiBase.includes('undefined')) {
+                console.warn('Invalid API config detected, forcing client-side detection');
+                API_CONFIG = null; // Reset to force re-detection
+                return await loadApiConfig();
+            }
+            
+            return API_CONFIG.apiBase;
+        }
+
+        async function loadApiConfig() {
+            try {
+                const response = await fetch('/api/config');
+                API_CONFIG = await response.json();
+                
+                // Validate the API base URL
+                if (!API_CONFIG.apiBase || API_CONFIG.apiBase === 'undefined') {
+                    throw new Error('Invalid API base URL from server');
+                }
+                
+                console.log('Loaded API config:', API_CONFIG);
+                return API_CONFIG.apiBase;
+            } catch (error) {
+                console.warn('Failed to load API config from server, using client-side detection:', error);
+                
+                // Client-side fallback detection
+                const protocol = window.location.protocol;
+                const hostname = window.location.hostname;
+                const port = window.location.port;
+                
+                let apiBase;
+                
+                if (hostname === 'localhost' || hostname === '127.0.0.1') {
+                    // Local development - use port 8080
+                    apiBase = `${protocol}//${hostname}:8080/api`;
+                } else {
+                    // Remote deployment - use same origin
+                    const portSuffix = (port && port !== '80' && port !== '443') ? `:${port}` : '';
+                    apiBase = `${protocol}//${hostname}${portSuffix}/api`;
+                }
+                
+                // Cache the fallback config
+                API_CONFIG = {
+                    apiBase: apiBase,
+                    environment: 'client-fallback',
+                    source: 'client-detection'
+                };
+                
+                console.log('Using fallback API config:', API_CONFIG);
+                return apiBase;
+            }
+        }
+
+        // Utility functions
+        function formatTime(dateString) {
+            if (!dateString) return 'Unknown';
+            const date = new Date(dateString);
+            return date.toLocaleTimeString();
+        }
+
+        function formatDateTime(dateString) {
+            if (!dateString) return 'Unknown';
+            const date = new Date(dateString);
+            return date.toLocaleString();
+        }
+
+        function showError(elementId, message) {
+            document.getElementById(elementId).innerHTML = `<div class="error">Error: ${message}</div>`;
+        }
+
+        function showLoading(elementId, message = 'Loading...') {
+            document.getElementById(elementId).innerHTML = `<div class="loading">${message}</div>`;
+        }
+
+        // API functions
+        async function fetchJson(url) {
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return await response.json();
+            } catch (error) {
+                console.error('Fetch error:', error);
+                throw error;
+            }
+        }
+
+        async function findActiveGame() {
+            try {
+                const apiBase = await getApiBase();
+                const games = await fetchJson(`${apiBase}/games`);
+                console.log('All games response:', games);
+                
+                if (!games.games || games.games.length === 0) {
+                    console.log('No games found');
+                    return null;
+                }
+
+                // Score games based on activity and player count
+                const scoredGames = games.games.map(game => {
+                    let score = 0;
+                    let playerCount = 0;
+                    
+                    // Handle both array and object formats for players
+                    if (game.players) {
+                        if (Array.isArray(game.players)) {
+                            playerCount = game.players.length;
+                        } else if (typeof game.players === 'object') {
+                            playerCount = Object.keys(game.players).length;
+                        }
+                    }
+                    
+                    // Score based on player count (more players = more active)
+                    score += playerCount * 10;
+                    
+                    // Bonus for games that aren't in setup phase
+                    if (game.phase && game.phase !== 'setup') {
+                        score += 20;
+                    }
+                    
+                    // Bonus for games with higher turn numbers (more active)
+                    if (game.turn_number && game.turn_number > 1) {
+                        score += game.turn_number * 2;
+                    }
+                    
+                    // Penalty for very old games (prefer recent activity)
+                    if (game.created_at) {
+                        const gameAge = Date.now() - new Date(game.created_at).getTime();
+                        const hoursOld = gameAge / (1000 * 60 * 60);
+                        if (hoursOld > 24) {
+                            score -= 10; // Penalty for games older than 24 hours
+                        }
+                    }
+                    
+                    console.log(`Game ${game.game_id}: ${playerCount} players, phase: ${game.phase}, turn: ${game.turn_number}, score: ${score}`);
+                    
+                    return {
+                        ...game,
+                        score,
+                        playerCount
+                    };
+                });
+
+                // Sort by score (highest first)
+                scoredGames.sort((a, b) => b.score - a.score);
+                
+                // Return the highest scoring game with at least one player
+                for (const game of scoredGames) {
+                    if (game.playerCount > 0) {
+                        console.log(`Selected active game: ${game.game_id} (score: ${game.score}, ${game.playerCount} players)`);
+                        return game.game_id;
+                    }
+                }
+                
+                // If no games have players, return the highest scoring game anyway
+                if (scoredGames.length > 0) {
+                    console.log(`No games with players found, using highest scoring game: ${scoredGames[0].game_id}`);
+                    return scoredGames[0].game_id;
+                }
+                
+                console.log('No suitable games found');
+                return null;
+            } catch (error) {
+                console.error('Error finding active game:', error);
+                return null;
+            }
+        }
+
+        async function updateGameStatus() {
+            if (!currentGameId) return;
+
+            try {
+                // Get any player ID from the game to fetch status
+                const apiBase = await getApiBase();
+                const games = await fetchJson(`${apiBase}/games`);
+                const currentGame = games.games && games.games.find(g => g.game_id === currentGameId);
+                
+                if (!currentGame) {
+                    showError('game-status-content', 'Game not found');
+                    return;
+                }
+
+                // Handle both array and object formats for players
+                let players = [];
+                if (currentGame.players) {
+                    if (Array.isArray(currentGame.players)) {
+                        players = currentGame.players;
+                    } else if (typeof currentGame.players === 'object') {
+                        players = Object.values(currentGame.players);
+                    }
+                }
+                
+                if (players.length === 0) {
+                    showError('game-status-content', 'No players found in game');
+                    return;
+                }
+
+                const playerId = players[0].player_id;
+                if (!playerId) {
+                    showError('game-status-content', 'Invalid player data');
+                    return;
+                }
+
+                const status = await fetchJson(`${apiBase}/games/${currentGameId}/status?player_id=${playerId}`);
+                
+                const gameStatus = status.game_status || {};
+                const turnNumber = gameStatus.turn_number || 1;
+                const currentPlayer = gameStatus.current_player || 'Unknown';
+                const phase = gameStatus.phase || 'Unknown';
+                
+                // Calculate game progress (assuming 42 territories total for victory)
+                const totalTerritories = 42;
+                let maxTerritories = 0;
+                let leadingPlayer = 'Unknown';
+                
+                players.forEach(player => {
+                    const territoryCount = player.territories?.length || 0;
+                    if (territoryCount > maxTerritories) {
+                        maxTerritories = territoryCount;
+                        leadingPlayer = player.name || 'Unknown';
+                    }
+                });
+                
+                const victoryProgress = (maxTerritories / totalTerritories) * 100;
+                
+                // Determine status indicator state
+                const statusIndicator = document.querySelector('.status-indicator');
+                if (statusIndicator) {
+                    statusIndicator.className = 'status-indicator';
+                    if (phase === 'attack' || phase === 'reinforcement') {
+                        statusIndicator.classList.add('thinking');
+                    } else if (phase === 'setup') {
+                        statusIndicator.classList.add('waiting');
+                    }
+                }
+                
+                const content = `
+                    <div class="info-row">
+                        <span class="info-label">Turn</span>
+                        <span class="info-value highlight">${turnNumber}</span>
+                    </div>
+                    
+                    <div class="info-row">
+                        <span class="info-label">Phase</span>
+                        <span class="info-value">
+                            <span class="phase-indicator phase-${phase.toLowerCase()}">${phase}</span>
+                        </span>
+                    </div>
+                    
+                    <div class="info-row">
+                        <span class="info-label">Current Player</span>
+                        <span class="info-value">${currentPlayer}</span>
+                    </div>
+                    
+                    <div class="info-row">
+                        <span class="info-label">Victory Progress</span>
+                        <div style="flex: 1; margin-left: 10px;">
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: ${victoryProgress}%"></div>
+                            </div>
+                            <div style="font-size: 0.7em; color: #666; text-align: right;">
+                                ${leadingPlayer}: ${maxTerritories}/${totalTerritories} (${victoryProgress.toFixed(1)}%)
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="info-row">
+                        <span class="info-label">Game ID</span>
+                        <span class="info-value">${currentGameId}</span>
+                    </div>
+                `;
+                
+                document.getElementById('game-status-content').innerHTML = content;
+            } catch (error) {
+                console.error('updateGameStatus error:', error);
+                showError('game-status-content', error.message);
+            }
+        }
+
+        async function updatePlayers() {
+            if (!currentGameId) return;
+
+            try {
+                const apiBase = await getApiBase();
+                const games = await fetchJson(`${apiBase}/games`);
+                const currentGame = games.games && games.games.find(g => g.game_id === currentGameId);
+                
+                if (!currentGame) {
+                    showError('players-content', 'Game not found');
+                    return;
+                }
+
+                // Handle both array and object formats for players
+                let players = [];
+                if (currentGame.players) {
+                    if (Array.isArray(currentGame.players)) {
+                        players = currentGame.players;
+                    } else if (typeof currentGame.players === 'object') {
+                        players = Object.values(currentGame.players);
+                    }
+                }
+                
+                if (players.length === 0) {
+                    showError('players-content', 'No players found');
+                    return;
+                }
+
+                // Calculate threat levels and sort players
+                const playersWithThreat = players.map(player => {
+                    const territories = player.territories?.length || 0;
+                    const armies = player.army_count || 0;
+                    const cards = player.cards?.length || 0;
+                    
+                    // Calculate threat score
+                    const threatScore = territories * 2 + armies + cards * 3;
+                    
+                    let threatLevel = 'low';
+                    let threatClass = 'threat-low';
+                    
+                    if (threatScore > 30) {
+                        threatLevel = 'high';
+                        threatClass = 'threat-high';
+                    } else if (threatScore > 15) {
+                        threatLevel = 'medium';
+                        threatClass = 'threat-medium';
+                    }
+                    
+                    // Check if this is the current player
+                    const isCurrentPlayer = currentGame.current_player === player.name;
+                    
+                    return {
+                        ...player,
+                        territories,
+                        armies,
+                        cards,
+                        threatScore,
+                        threatLevel,
+                        threatClass,
+                        isCurrentPlayer
+                    };
+                });
+
+                // Sort by threat score (highest first)
+                playersWithThreat.sort((a, b) => b.threatScore - a.threatScore);
+
+                const playersHtml = playersWithThreat.map((player, index) => {
+                    const rankEmoji = index === 0 ? '👑' : index === 1 ? '🥈' : index === 2 ? '🥉' : '👤';
+                    const currentPlayerIndicator = player.isCurrentPlayer ? '<span class="turn-timer">ACTIVE</span>' : '';
+                    
+                    return `
+                        <div class="player-item">
+                            <div>
+                                <div class="player-name">
+                                    ${rankEmoji} ${player.name || 'Unknown Player'}
+                                    ${currentPlayerIndicator}
+                                    <span class="threat-indicator ${player.threatClass}"></span>
+                                </div>
+                            </div>
+                            <div class="player-stats">
+                                <span title="Territories">🏰 ${player.territories}</span>
+                                <span title="Armies">⚔️ ${player.armies}</span>
+                                <span title="Cards">🃏 ${player.cards}</span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                document.getElementById('players-content').innerHTML = playersHtml;
+            } catch (error) {
+                console.error('updatePlayers error:', error);
+                showError('players-content', error.message);
+            }
+        }
+
+        async function updateLatestDecision() {
+            if (!currentGameId) return;
+
+            try {
+                const apiBase = await getApiBase();
+                const decisions = await fetchJson(`${apiBase}/games/${currentGameId}/agent-decisions?limit=3`);
+                
+                if (!decisions.decisions || decisions.decisions.length === 0) {
+                    document.getElementById('decision-content').innerHTML = '<div class="loading">No decisions yet...</div>';
+                    return;
+                }
+
+                // Find the most recent decision with reasoning, or fall back to the latest
+                let decision = decisions.decisions.find(d => d.agent_reasoning && d.agent_reasoning.trim() !== '') || decisions.decisions[0];
+                
+                // Clean up reasoning display - remove <think> blocks and format nicely
+                let displayReasoning = 'No reasoning available';
+                
+                if (decision.agent_reasoning && decision.agent_reasoning.trim() !== '') {
+                    let reasoning = decision.agent_reasoning;
+                    
+                    // Remove <think> blocks
+                    reasoning = reasoning.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+                    
+                    // If there's content after removing think blocks, use it
+                    if (reasoning) {
+                        // Show full reasoning without truncation
+                        displayReasoning = reasoning
+                            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                            .replace(/\n\n/g, '<br><br>')
+                            .replace(/\n/g, '<br>');
+                    } else {
+                        displayReasoning = 'Decision in progress...';
+                    }
+                } else if (decision.success === 0) {
+                    displayReasoning = 'Decision failed or incomplete';
+                }
+                
+                const content = `
+                    <div class="decision-box">
+                        <div class="decision-meta">
+                            <span><strong>🤖 ${decision.player_name}</strong></span>
+                            <span>${decision.success ? '✅' : '❌'}</span>
+                        </div>
+                        <div class="decision-reasoning">
+                            ${displayReasoning}
+                        </div>
+                    </div>
+                `;
+
+                document.getElementById('decision-content').innerHTML = content;
+            } catch (error) {
+                showError('decision-content', error.message);
+            }
+        }
+
+        async function updateMessages() {
+            if (!currentGameId) return;
+
+            try {
+                // Get messages for each player and combine them
+                const apiBase = await getApiBase();
+                const games = await fetchJson(`${apiBase}/games`);
+                const currentGame = games.games && games.games.find(g => g.game_id === currentGameId);
+                
+                if (!currentGame) {
+                    document.getElementById('messages-content').innerHTML = '<div class="loading">Game not found</div>';
+                    return;
+                }
+
+                // Handle both array and object formats for players
+                let players = [];
+                if (currentGame.players) {
+                    if (Array.isArray(currentGame.players)) {
+                        players = currentGame.players;
+                    } else if (typeof currentGame.players === 'object') {
+                        players = Object.values(currentGame.players);
+                    }
+                }
+                
+                if (players.length === 0) {
+                    document.getElementById('messages-content').innerHTML = '<div class="loading">No players found</div>';
+                    return;
+                }
+
+                let allMessages = [];
+                
+                // Get messages for each player
+                for (const player of players) {
+                    if (!player.player_id) continue;
+                    
+                    try {
+                        const messages = await fetchJson(`${apiBase}/games/${currentGameId}/messages?player_id=${player.player_id}`);
+                        if (messages.messages) {
+                            allMessages.push(...messages.messages.map(msg => ({
+                                ...msg,
+                                to_player: player.name || 'Unknown Player'
+                            })));
+                        }
+                    } catch (error) {
+                        console.error(`Error fetching messages for ${player.name || 'Unknown Player'}:`, error);
+                    }
+                }
+
+                // Advanced deduplication logic for broadcast messages
+                const processedMessages = [];
+                const broadcastGroups = new Map();
+
+                for (const msg of allMessages) {
+                    const msgKey = `${msg.from_player_name}-${msg.timestamp}-${msg.content}`;
+                    
+                    if (!broadcastGroups.has(msgKey)) {
+                        broadcastGroups.set(msgKey, {
+                            ...msg,
+                            recipients: [msg.to_player]
+                        });
+                    } else {
+                        const existingMsg = broadcastGroups.get(msgKey);
+                        if (!existingMsg.recipients.includes(msg.to_player)) {
+                            existingMsg.recipients.push(msg.to_player);
+                        }
+                    }
+                }
+
+                // Convert to array and identify broadcasts
+                for (const [key, msg] of broadcastGroups) {
+                    const isBroadcast = msg.recipients.length > 1;
+                    processedMessages.push({
+                        ...msg,
+                        is_broadcast: isBroadcast
+                    });
+                }
+
+                // Sort by timestamp (most recent first) and take only 3 most recent
+                processedMessages.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                const recentMessages = processedMessages.slice(0, 3);
+
+                if (recentMessages.length === 0) {
+                    document.getElementById('messages-content').innerHTML = '<div class="loading">No messages yet...</div>';
+                    return;
+                }
+
+                const messagesHtml = recentMessages.map(msg => {
+                    const recipientDisplay = msg.is_broadcast ? 
+                        `📢 BROADCAST (${msg.recipients.length} recipients)` : 
+                        msg.recipients[0];
+                    
+                    const messageClass = msg.is_broadcast ? 'message-item broadcast-message' : 'message-item';
+                    const borderColor = msg.is_broadcast ? '#e74c3c' : '#f39c12';
+                    
+                    // Show full content for messages
+                    const content = msg.content || 'No content';
+                    
+                    return `
+                        <div class="${messageClass}" style="border-left-color: ${borderColor}">
+                            <div class="message-header">
+                                <span class="message-from">${msg.from_player_name || 'Unknown'} → ${recipientDisplay}</span>
+                                <span class="message-time">${formatTime(msg.timestamp)}</span>
+                            </div>
+                            <div class="message-content">${content}</div>
+                        </div>
+                    `;
+                }).join('');
+
+                document.getElementById('messages-content').innerHTML = messagesHtml;
+            } catch (error) {
+                console.error('updateMessages error:', error);
+                showError('messages-content', error.message);
+            }
+        }
+
+        async function updateStrategies() {
+            if (!currentGameId) return;
+
+            try {
+                const apiBase = await getApiBase();
+                const games = await fetchJson(`${apiBase}/games`);
+                const currentGame = games.games && games.games.find(g => g.game_id === currentGameId);
+                
+                if (!currentGame) {
+                    showError('strategies-content', 'Game not found');
+                    return;
+                }
+
+                // Handle both array and object formats for players
+                let players = [];
+                if (currentGame.players) {
+                    if (Array.isArray(currentGame.players)) {
+                        players = currentGame.players;
+                    } else if (typeof currentGame.players === 'object') {
+                        players = Object.values(currentGame.players);
+                    }
+                }
+                
+                if (players.length === 0) {
+                    showError('strategies-content', 'No players found');
+                    return;
+                }
+
+                let strategiesHtml = '';
+                
+                // Get strategies for each player (limit to 4 for briefing mode)
+                const limitedPlayers = players.slice(0, 4);
+                
+                for (const player of limitedPlayers) {
+                    if (!player.player_id) continue;
+                    
+                    try {
+                        const strategies = await fetchJson(`${apiBase}/games/${currentGameId}/player/${player.player_id}/strategies`);
+                        
+                        const shortTerm = strategies.short_term_strategy || 'No strategy set';
+                        
+                        strategiesHtml += `
+                            <div class="strategy-item">
+                                <div class="strategy-player-name">${player.name || 'Unknown Player'}</div>
+                                <div class="strategy-content ${shortTerm === 'No strategy set' ? 'empty' : ''}">
+                                    ${shortTerm}
+                                </div>
+                            </div>
+                        `;
+                    } catch (error) {
+                        console.error(`Error fetching strategies for ${player.name || 'Unknown Player'}:`, error);
+                        strategiesHtml += `
+                            <div class="strategy-item">
+                                <div class="strategy-player-name">${player.name || 'Unknown Player'}</div>
+                                <div class="strategy-content empty">Error loading strategy</div>
+                            </div>
+                        `;
+                    }
+                }
+                
+                document.getElementById('strategies-content').innerHTML = strategiesHtml;
+                
+            } catch (error) {
+                console.error('updateStrategies error:', error);
+                showError('strategies-content', error.message);
+            }
+        }
+
+        async function updateRiskMap() {
+            if (!currentGameId) return;
+
+            try {
+                // Get game data and board state
+                const apiBase = await getApiBase();
+                const games = await fetchJson(`${apiBase}/games`);
+                const currentGame = games.games && games.games.find(g => g.game_id === currentGameId);
+                
+                if (!currentGame) {
+                    showError('risk-map-content', 'Game not found');
+                    return;
+                }
+
+                // Handle both array and object formats for players
+                let players = [];
+                if (currentGame.players) {
+                    if (Array.isArray(currentGame.players)) {
+                        players = currentGame.players;
+                    } else if (typeof currentGame.players === 'object') {
+                        players = Object.values(currentGame.players);
+                    }
+                }
+                
+                if (players.length === 0) {
+                    showError('risk-map-content', 'No players found');
+                    return;
+                }
+
+                // Get board data
+                const playerId = players[0]?.player_id;
+                if (!playerId) {
+                    showError('risk-map-content', 'Invalid player data');
+                    return;
+                }
+
+                const boardData = await fetchJson(`${apiBase}/games/${currentGameId}/board?player_id=${playerId}`);
+                if (!boardData || !boardData.territories) {
+                    showError('risk-map-content', 'No board data available');
+                    return;
+                }
+
+                // Create simplified Risk map for briefing mode
+                createCompactRiskMap(boardData.territories, players, currentGame.current_player);
+
+            } catch (error) {
+                console.error('updateRiskMap error:', error);
+                showError('risk-map-content', error.message);
+            }
+        }
+
+        function createCompactRiskMap(territories, players, currentPlayer) {
+            // Player colors
+            const playerColors = {
+                0: '#3498db', // Blue
+                1: '#e74c3c', // Red  
+                2: '#27ae60', // Green
+                3: '#f39c12', // Orange
+                4: '#9b59b6', // Purple
+                5: '#1abc9c'  // Teal
+            };
+
+            // Create player color mapping
+            const playerColorMap = {};
+            players.forEach((player, index) => {
+                playerColorMap[player.player_id] = playerColors[index] || '#95a5a6';
+            });
+
+            // Simplified territory shapes for compact view
+            const territoryShapes = {
+                // North America
+                'Alaska': { path: 'M10,40 L30,35 L35,50 L25,55 Z', labelX: 25, labelY: 45 },
+                'Northwest Territory': { path: 'M35,25 L65,20 L70,40 L60,45 Z', labelX: 52, labelY: 32 },
+                'Greenland': { path: 'M100,15 L120,10 L125,30 L110,35 Z', labelX: 112, labelY: 22 },
+                'Alberta': { path: 'M35,45 L60,40 L65,60 L45,65 Z', labelX: 50, labelY: 52 },
+                'Ontario': { path: 'M65,40 L85,35 L90,55 L75,60 Z', labelX: 77, labelY: 47 },
+                'Quebec': { path: 'M90,35 L110,30 L115,50 L100,55 Z', labelX: 102, labelY: 42 },
+                'Western United States': { path: 'M30,65 L55,60 L60,80 L40,85 Z', labelX: 45, labelY: 72 },
+                'Eastern United States': { path: 'M60,60 L85,55 L90,75 L70,80 Z', labelX: 75, labelY: 67 },
+                'Central America': { path: 'M45,85 L65,80 L70,95 L55,100 Z', labelX: 57, labelY: 90 },
+
+                // South America
+                'Venezuela': { path: 'M55,100 L70,95 L75,110 L65,115 Z', labelX: 67, labelY: 105 },
+                'Brazil': { path: 'M65,115 L85,110 L90,140 L75,145 Z', labelX: 77, labelY: 127 },
+                'Peru': { path: 'M45,115 L65,110 L70,135 L55,140 Z', labelX: 57, labelY: 125 },
+                'Argentina': { path: 'M55,140 L75,135 L80,160 L65,165 Z', labelX: 67, labelY: 150 },
+
+                // Europe
+                'Iceland': { path: 'M130,25 L145,20 L150,35 L140,40 Z', labelX: 142, labelY: 30 },
+                'Scandinavia': { path: 'M150,20 L170,15 L175,35 L160,40 Z', labelX: 162, labelY: 27 },
+                'Great Britain': { path: 'M140,40 L155,35 L160,50 L150,55 Z', labelX: 152, labelY: 45 },
+                'Northern Europe': { path: 'M160,35 L180,30 L185,50 L170,55 Z', labelX: 172, labelY: 42 },
+                'Western Europe': { path: 'M150,55 L170,50 L175,70 L160,75 Z', labelX: 162, labelY: 62 },
+                'Southern Europe': { path: 'M175,50 L195,45 L200,65 L185,70 Z', labelX: 187, labelY: 57 },
+                'Ukraine': { path: 'M185,30 L205,25 L210,45 L195,50 Z', labelX: 197, labelY: 37 },
+
+                // Africa
+                'North Africa': { path: 'M160,75 L185,70 L190,90 L170,95 Z', labelX: 175, labelY: 82 },
+                'Egypt': { path: 'M190,70 L205,65 L210,85 L200,90 Z', labelX: 202, labelY: 77 },
+                'East Africa': { path: 'M200,90 L215,85 L220,110 L210,115 Z', labelX: 212, labelY: 100 },
+                'Congo': { path: 'M170,95 L190,90 L195,115 L180,120 Z', labelX: 182, labelY: 105 },
+                'South Africa': { path: 'M180,120 L200,115 L205,135 L190,140 Z', labelX: 192, labelY: 127 },
+                'Madagascar': { path: 'M210,115 L220,110 L225,125 L215,130 Z', labelX: 217, labelY: 120 },
+
+                // Asia
+                'Ural': { path: 'M210,25 L225,20 L230,40 L220,45 Z', labelX: 222, labelY: 32 },
+                'Siberia': { path: 'M230,15 L250,10 L255,30 L240,35 Z', labelX: 242, labelY: 22 },
+                'Yakutsk': { path: 'M255,10 L275,5 L280,25 L265,30 Z', labelX: 267, labelY: 17 },
+                'Kamchatka': { path: 'M280,25 L295,20 L300,40 L285,45 Z', labelX: 287, labelY: 32 },
+                'Irkutsk': { path: 'M240,35 L255,30 L260,50 L250,55 Z', labelX: 252, labelY: 42 },
+                'Mongolia': { path: 'M250,55 L265,50 L270,70 L260,75 Z', labelX: 262, labelY: 62 },
+                'China': { path: 'M230,70 L250,65 L255,90 L240,95 Z', labelX: 242, labelY: 80 },
+                'Afghanistan': { path: 'M220,65 L235,60 L240,80 L230,85 Z', labelX: 232, labelY: 72 },
+                'Middle East': { path: 'M205,75 L220,70 L225,90 L215,95 Z', labelX: 217, labelY: 82 },
+                'India': { path: 'M230,85 L245,80 L250,105 L240,110 Z', labelX: 242, labelY: 95 },
+                'Siam': { path: 'M250,90 L265,85 L270,105 L260,110 Z', labelX: 262, labelY: 97 },
+                'Japan': { path: 'M270,70 L285,65 L290,85 L280,90 Z', labelX: 282, labelY: 77 },
+
+                // Australia
+                'Indonesia': { path: 'M260,110 L275,105 L280,125 L270,130 Z', labelX: 272, labelY: 117 },
+                'New Guinea': { path: 'M280,105 L295,100 L300,120 L290,125 Z', labelX: 292, labelY: 112 },
+                'Western Australia': { path: 'M270,130 L285,125 L290,145 L280,150 Z', labelX: 282, labelY: 137 },
+                'Eastern Australia': { path: 'M290,125 L305,120 L310,140 L300,145 Z', labelX: 302, labelY: 132 }
+            };
+
+            // Create compact SVG map
+            let mapHtml = `
+                <div class="risk-map-container">
+                    <svg class="risk-map-svg" viewBox="0 0 320 170">
+                        <!-- Ocean background -->
+                        <rect x="0" y="0" width="320" height="170" fill="#4a90e2" opacity="0.3"/>
+            `;
+
+            // Add territory shapes
+            Object.entries(territoryShapes).forEach(([territoryName, shape]) => {
+                const territory = territories[territoryName];
+                if (!territory) return;
+
+                const owner = players.find(p => p.player_id === territory.owner);
+                const color = owner ? playerColorMap[territory.owner] : '#bdc3c7';
+                const armyCount = territory.army_count || 0;
+                const isCurrentPlayer = owner && owner.name === currentPlayer;
+
+                mapHtml += `
+                    <path 
+                        d="${shape.path}" 
+                        fill="${color}" 
+                        class="territory ${isCurrentPlayer ? 'current-player' : ''}"
+                        data-territory="${territoryName}"
+                        data-owner="${owner ? owner.name : 'Neutral'}"
+                        data-armies="${armyCount}"
+                        onmouseover="showMapTooltip(event, '${territoryName}', '${owner ? owner.name : 'Neutral'}', ${armyCount})"
+                        onmouseout="hideMapTooltip()"
+                    />
+                    <text x="${shape.labelX}" y="${shape.labelY + 2}" class="army-count">${armyCount}</text>
+                `;
+            });
+
+            mapHtml += `</svg>`;
+
+            // Add compact legend
+            mapHtml += `
+                <div class="map-legend">
+            `;
+
+            players.slice(0, 4).forEach((player, index) => {
+                const color = playerColors[index] || '#95a5a6';
+                const isActive = player.name === currentPlayer;
+                mapHtml += `
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: ${color}"></div>
+                        <span>${player.name}${isActive ? ' *' : ''}</span>
+                    </div>
+                `;
+            });
+
+            mapHtml += `</div>`;
+
+            // Add tooltip
+            mapHtml += `<div id="map-tooltip" class="map-tooltip"></div>`;
+
+            document.getElementById('risk-map-content').innerHTML = mapHtml;
+        }
+
+        // Map tooltip functions
+        function showMapTooltip(event, territory, owner, armies) {
+            const tooltip = document.getElementById('map-tooltip');
+            if (!tooltip) return;
+
+            tooltip.innerHTML = `
+                <strong>${territory}</strong><br>
+                Owner: ${owner}<br>
+                Armies: ${armies}
+            `;
+
+            tooltip.style.left = (event.pageX + 10) + 'px';
+            tooltip.style.top = (event.pageY - 10) + 'px';
+            tooltip.classList.add('visible');
+        }
+
+        function hideMapTooltip() {
+            const tooltip = document.getElementById('map-tooltip');
+            if (tooltip) {
+                tooltip.classList.remove('visible');
+            }
+        }
+
+        // Activity log functions
+        function formatActionData(actionType, actionData, actionResult) {
+            try {
+                const data = typeof actionData === 'string' ? JSON.parse(actionData) : actionData;
+                const result = typeof actionResult === 'string' ? JSON.parse(actionResult) : actionResult;
+                
+                switch (actionType) {
+                    case 'place_armies':
+                        const territory = data.territory || data.territory_name || 'Unknown Territory';
+                        const armyCount = data.army_count || data.armies || data.count || '?';
+                        return `🛡️ Placed ${armyCount} armies in ${territory}`;
+                    
+                    case 'attack_territory':
+                        const attacker = data.from_territory || data.attacker_territory || 'Unknown';
+                        const target = data.to_territory || data.target_territory || 'Unknown';
+                        const success = result && result.success;
+                        return `⚔️ Attacked ${target} from ${attacker} ${success ? '✅' : '❌'}`;
+                    
+                    case 'fortify_territory':
+                        const fortifySource = data.source_territory || data.from_territory || 'Unknown';
+                        const fortifyTarget = data.target_territory || data.to_territory || 'Unknown';
+                        const fortifyArmies = data.army_count || data.armies || '?';
+                        return `🏰 Fortified ${fortifyTarget} from ${fortifySource} (${fortifyArmies})`;
+                    
+                    case 'end_turn':
+                        return `⏭️ Ended turn`;
+                    
+                    case 'send_message':
+                        const recipient = data.to_player_name || data.target_player || 'Unknown';
+                        return `💬 Sent message to ${recipient}`;
+                    
+                    default:
+                        return `🔧 ${actionType}`;
+                }
+            } catch (e) {
+                return `🔧 ${actionType}`;
+            }
+        }
+
+        async function updateActivityLog() {
+            if (!currentGameId) return;
+            
+            try {
+                const apiBase = await getApiBase();
+                // Get game actions and agent decisions
+                const [actions, decisions] = await Promise.all([
+                    fetchJson(`${apiBase}/games/${currentGameId}/actions?limit=50`),
+                    fetchJson(`${apiBase}/games/${currentGameId}/agent-decisions?limit=25`)
+                ]);
+
+                let logEntries = [];
+
+                // Add game actions
+                if (actions.actions) {
+                    actions.actions.forEach(action => {
+                        const formattedAction = formatActionData(action.action_type, action.action_data, action.action_result);
+                        
+                        logEntries.push({
+                            timestamp: action.timestamp,
+                            type: 'action',
+                            player: action.player_name || 'System',
+                            content: formattedAction,
+                            turn: action.turn_number
+                        });
+                    });
+                }
+
+                // Add agent decisions
+                if (decisions.decisions) {
+                    decisions.decisions.forEach(decision => {
+                        const statusIcon = decision.success ? '✅' : '❌';
+                        const timeText = decision.decision_time_seconds ? ` (${decision.decision_time_seconds.toFixed(1)}s)` : '';
+                        
+                        logEntries.push({
+                            timestamp: decision.decision_timestamp,
+                            type: 'decision',
+                            player: decision.player_name,
+                            content: `Made decision ${statusIcon}${timeText}`,
+                            turn: decision.turn_number
+                        });
+                    });
+                }
+
+                // Sort by timestamp (most recent first)
+                logEntries.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+                if (logEntries.length === 0) {
+                    document.getElementById('activity-content').innerHTML = '<div class="loading">No activity found</div>';
+                    return;
+                }
+
+                const logHtml = logEntries.map(entry => `
+                    <div class="activity-item">
+                        <div class="activity-timestamp">${formatTime(entry.timestamp)}</div>
+                        <div class="activity-player">
+                            <span class="activity-type-${entry.type}">${entry.type.toUpperCase()}</span>
+                            ${entry.player}
+                        </div>
+                        <div class="activity-action">${entry.content}</div>
+                    </div>
+                `).join('');
+
+                document.getElementById('activity-content').innerHTML = logHtml;
+            } catch (error) {
+                console.error('updateActivityLog error:', error);
+                document.getElementById('activity-content').innerHTML = '<div class="error">Error loading activity log</div>';
+            }
+        }
+
+        async function updateAll() {
+            // First, find an active game if we don't have one
+            if (!currentGameId) {
+                currentGameId = await findActiveGame();
+                if (!currentGameId) {
+                    document.getElementById('game-status-content').innerHTML = '<div class="loading">No active games found. Start agents/simple_runner.py to begin!</div>';
+                    return;
+                }
+            }
+
+            // Update all sections
+            await Promise.all([
+                updateGameStatus(),
+                updateRiskMap(),
+                updatePlayers(),
+                updateLatestDecision(),
+                updateMessages(),
+                updateStrategies(),
+                updateActivityLog()
+            ]);
+
+            // Update last updated time
+            document.getElementById('last-updated').textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
+        }
+
+        // Mode switching function
+        function switchToStandardMode() {
+            // Store current game ID in localStorage for standard mode
+            if (currentGameId) {
+                localStorage.setItem('risk_current_game_id', currentGameId);
+            }
+            
+            // Navigate to standard mode
+            window.location.href = 'risk_dashboard.html';
+        }
+
+        // Initialize the briefing dashboard
+        async function init() {
+            console.log('Initializing Risk Briefing Dashboard...');
+            
+            // Check if we have a stored game ID from standard mode
+            const storedGameId = localStorage.getItem('risk_current_game_id');
+            if (storedGameId) {
+                currentGameId = storedGameId;
+                console.log('Using stored game ID:', currentGameId);
+            }
+            
+            await updateAll();
+            
+            // Set up auto-refresh every 3 seconds (faster for briefing mode)
+            updateInterval = setInterval(updateAll, 3000);
+        }
+
+        // Start the dashboard when page loads
+        document.addEventListener('DOMContentLoaded', init);
+
+        // Clean up on page unload
+        window.addEventListener('beforeunload', () => {
+            if (updateInterval) {
+                clearInterval(updateInterval);
+            }
+        });
+    </script>
+</body>
+</html>
